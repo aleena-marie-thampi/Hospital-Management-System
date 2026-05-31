@@ -18,13 +18,14 @@ import os   # add this at the very top of app.py
 @contextmanager
 def get_db():
     conn = mysql.connector.connect(
-        host=os.environ.get("MYSQLHOST", "localhost"),
-        user=os.environ.get("MYSQLUSER", "root"),
-        password=os.environ.get("MYSQLPASSWORD", "aleena@2006"),
-        database=os.environ.get("MYSQLDATABASE", "hms1"),
-        port=int(os.environ.get("MYSQLPORT", 3306)),
-        autocommit=False,
-        connection_timeout=10,
+    host=os.environ.get("MYSQLHOST", "localhost"),
+    user=os.environ.get("MYSQLUSER", "root"),
+    password=os.environ.get("MYSQLPASSWORD", "aleena@2006"),
+    database=os.environ.get("MYSQLDATABASE", "hms1"),
+    port=int(os.environ.get("MYSQLPORT", 3306)),
+    autocommit=False,
+    connection_timeout=10,
+)
     )
     cursor = conn.cursor(dictionary=True)
     try:

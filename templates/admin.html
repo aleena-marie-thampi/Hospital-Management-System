@@ -1,0 +1,1498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HMS — Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --navy:       #0f1f3d;
+            --navy-mid:   #162847;
+            --navy-light: #1e3560;
+            --teal:       #0ea5b0;
+            --teal-light: #17c4d0;
+            --teal-glow:  rgba(14,165,176,.18);
+            --amber:      #f59e0b;
+            --red:        #ef4444;
+            --red-dark:   #b91c1c;
+            --green:      #10b981;
+            --green-dark: #047857;
+            --white:      #ffffff;
+            --muted:      #8ba3c9;
+            --border:     rgba(255,255,255,.07);
+            --card-bg:    rgba(255,255,255,.04);
+            --card-hover: rgba(14,165,176,.08);
+            --radius:     12px;
+            --radius-lg:  18px;
+            --shadow-teal:0 0 20px rgba(14,165,176,.25);
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--navy); color: var(--white); min-height: 100vh;
+            background-image:
+                radial-gradient(ellipse 80% 50% at 20% -10%, rgba(14,165,176,.12) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 40% at 80% 110%, rgba(245,158,11,.06) 0%, transparent 55%);
+        }
+
+        /* NAVBAR */
+        .navbar {
+            position: sticky; top: 0; z-index: 100;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 2.5rem; height: 64px;
+            background: rgba(15,31,61,.92); backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border); box-shadow: 0 2px 20px rgba(0,0,0,.4);
+        }
+        .navbar-brand { display: flex; align-items: center; gap: .75rem; }
+        .logo-icon {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--teal), var(--teal-light));
+            border-radius: 10px; display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; box-shadow: var(--shadow-teal);
+        }
+        .brand-text {
+            font-size: 1.1rem; font-weight: 700; letter-spacing: .5px;
+            background: linear-gradient(90deg, var(--white), var(--teal-light));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .brand-sub { font-size: .68rem; color: var(--muted); display: block; margin-top: -2px; letter-spacing: .8px; }
+        .navbar-right { display: flex; align-items: center; gap: 1rem; }
+        .role-badge {
+            font-size: .72rem; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+            color: var(--teal-light); background: var(--teal-glow);
+            border: 1px solid rgba(14,165,176,.3); padding: .3rem .75rem; border-radius: 20px;
+        }
+        .logout-btn {
+            display: flex; align-items: center; gap: .4rem;
+            font-size: .875rem; font-weight: 600; color: var(--white);
+            background: rgba(239,68,68,.15); border: 1px solid rgba(239,68,68,.3);
+            padding: .45rem 1rem; border-radius: 8px; text-decoration: none; transition: all .2s ease;
+        }
+        .logout-btn:hover { background: rgba(239,68,68,.3); border-color: rgba(239,68,68,.6); transform: translateY(-1px); }
+
+        /* LAYOUT */
+        .page { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+        .page-header { margin-bottom: 2.5rem; }
+        .page-header h1 {
+            font-size: 1.75rem; font-weight: 700;
+            background: linear-gradient(90deg, var(--white) 0%, var(--teal-light) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .page-header p { color: var(--muted); font-size: .9rem; margin-top: .3rem; }
+
+        /* STATS */
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 1rem; margin-bottom: 2.5rem;
+        }
+        .stat-card {
+            background: var(--card-bg); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); padding: 1.4rem 1.5rem;
+            position: relative; overflow: hidden;
+            transition: transform .2s, box-shadow .2s, background .2s;
+            animation: fadeUp .5s ease both;
+        }
+        .stat-card:hover { transform: translateY(-4px); background: var(--card-hover); box-shadow: var(--shadow-teal); }
+        .stat-card::before {
+            content: ''; position: absolute; top: 0; left: 0;
+            width: 4px; height: 100%; background: var(--accent, var(--teal));
+        }
+        .stat-icon { font-size: 1.5rem; margin-bottom: .6rem; }
+        .stat-label { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin-bottom: .35rem; }
+        .stat-value { font-size: 2rem; font-weight: 700; font-family: 'DM Mono', monospace; color: var(--accent, var(--teal-light)); }
+
+        /* SECTION */
+        .section { margin-bottom: 3rem; animation: fadeUp .5s ease both; }
+        .section-header {
+            display: flex; align-items: center; gap: .75rem;
+            margin-bottom: 1.25rem; padding-bottom: .85rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .section-icon {
+            width: 32px; height: 32px; background: var(--teal-glow);
+            border: 1px solid rgba(14,165,176,.25); border-radius: 8px;
+            display: flex; align-items: center; justify-content: center; font-size: .9rem;
+        }
+        .section-header h2 { font-size: 1.1rem; font-weight: 700; letter-spacing: .3px; }
+
+        /* FORM */
+        .form-card {
+            background: var(--card-bg); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 1.5rem;
+        }
+        .form-grid { display: flex; flex-wrap: wrap; gap: .75rem; align-items: flex-end; }
+        .form-field { display: flex; flex-direction: column; gap: .35rem; min-width: 160px; }
+        .form-field label { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .7px; color: var(--muted); }
+        .form-field input, .form-field select {
+            background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);
+            color: var(--white); padding: .6rem .85rem; border-radius: 8px;
+            font-size: .875rem; font-family: 'DM Sans', sans-serif;
+            transition: border-color .2s, box-shadow .2s; outline: none;
+        }
+        .form-field input::placeholder { color: rgba(255,255,255,.25); }
+        .form-field input:focus, .form-field select:focus {
+            border-color: var(--teal); box-shadow: 0 0 0 3px rgba(14,165,176,.15);
+            background: rgba(14,165,176,.06);
+        }
+        .form-field select option { background: var(--navy-mid); color: var(--white); }
+        .form-field input[type="date"], .form-field input[type="time"] { color-scheme: dark; }
+
+        /* BUTTONS */
+        .btn {
+            display: inline-flex; align-items: center; gap: .4rem;
+            padding: .65rem 1.3rem; border: none; border-radius: 8px;
+            font-size: .875rem; font-weight: 600; font-family: 'DM Sans', sans-serif;
+            cursor: pointer; transition: all .2s ease; text-decoration: none; white-space: nowrap;
+        }
+        .btn-teal {
+            background: linear-gradient(135deg, var(--teal), #0891a0);
+            color: var(--white); box-shadow: 0 4px 12px rgba(14,165,176,.3);
+        }
+        .btn-teal:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(14,165,176,.45); }
+        .btn-red {
+            background: linear-gradient(135deg, var(--red), var(--red-dark));
+            color: var(--white); font-size: .8rem; padding: .4rem .85rem;
+        }
+        .btn-red:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(239,68,68,.35); }
+        .btn:active { transform: translateY(0); }
+
+        /* TABLE */
+        .table-wrapper {
+            background: var(--card-bg); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); overflow: hidden; overflow-x: auto;
+        }
+        table { width: 100%; border-collapse: collapse; }
+        thead tr { background: rgba(14,165,176,.1); border-bottom: 1px solid var(--border); }
+        thead th {
+            padding: .85rem 1.1rem; text-align: left;
+            font-size: .72rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: .8px; color: var(--teal-light); white-space: nowrap;
+        }
+        tbody tr { border-bottom: 1px solid var(--border); transition: background .15s; }
+        tbody tr:last-child { border-bottom: none; }
+        tbody tr:hover { background: rgba(14,165,176,.05); }
+        tbody td { padding: .85rem 1.1rem; font-size: .875rem; color: rgba(255,255,255,.85); }
+        .empty-row td { text-align: center; color: var(--muted); padding: 2rem; font-size: .875rem; }
+        .id-cell { font-family: 'DM Mono', monospace; color: var(--teal-light); font-size: .8rem; }
+
+        /* BADGES */
+        .badge { display: inline-flex; align-items: center; gap: .3rem; padding: .2rem .6rem; border-radius: 20px; font-size: .72rem; font-weight: 600; letter-spacing: .3px; }
+        .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+        .badge-low       { background: rgba(239,68,68,.2);    color: #fca5a5; border: 1px solid rgba(239,68,68,.3); }
+        .badge-ok        { background: rgba(16,185,129,.2);   color: #6ee7b7; border: 1px solid rgba(16,185,129,.3); }
+        .badge-pending   { background: rgba(245,158,11,.18);  color: #fcd34d; border: 1px solid rgba(245,158,11,.3); }
+        .badge-completed { background: rgba(16,185,129,.15);  color: #6ee7b7; border: 1px solid rgba(16,185,129,.3); }
+        .badge-today     { background: rgba(14,165,176,.18);  color: var(--teal-light); border: 1px solid rgba(14,165,176,.3); }
+
+        /* DIVIDER */
+        .divider { height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin: 2rem 0; }
+
+        /* TOAST */
+        #toast {
+            position: fixed; bottom: 1.5rem; right: 1.5rem;
+            background: var(--navy-mid); border: 1px solid var(--teal);
+            color: var(--white); padding: .75rem 1.25rem; border-radius: 10px;
+            font-size: .875rem; font-weight: 500; box-shadow: var(--shadow-teal);
+            transform: translateY(80px); opacity: 0;
+            transition: all .3s cubic-bezier(.34,1.56,.64,1); z-index: 999;
+        }
+        #toast.show { transform: translateY(0); opacity: 1; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .stats-grid .stat-card:nth-child(1) { animation-delay: .05s; }
+        .stats-grid .stat-card:nth-child(2) { animation-delay: .1s;  }
+        .stats-grid .stat-card:nth-child(3) { animation-delay: .15s; }
+        .stats-grid .stat-card:nth-child(4) { animation-delay: .2s;  }
+
+        /* TABS */
+        .tab-bar {
+            display: flex; gap: .4rem; flex-wrap: wrap;
+            margin-bottom: 1.75rem; border-bottom: 1px solid var(--border);
+            padding-bottom: .5rem;
+        }
+        .tab-btn {
+            padding: .5rem 1.1rem; border: 1px solid var(--border);
+            border-radius: 8px 8px 0 0; background: transparent;
+            color: var(--muted); font-size: .875rem; font-weight: 600;
+            font-family: 'DM Sans', sans-serif; cursor: pointer;
+            transition: all .2s; white-space: nowrap;
+        }
+        .tab-btn:hover { color: var(--white); background: rgba(255,255,255,.05); }
+        .tab-btn.active {
+            background: var(--teal-glow); border-color: rgba(14,165,176,.4);
+            color: var(--teal-light);
+        }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* BILL PREVIEW CARD */
+        .bill-preview-card {
+            background: rgba(14,165,176,.06); border: 1px solid rgba(14,165,176,.2);
+            border-radius: 12px; padding: 1.25rem 1.5rem; max-width: 480px;
+        }
+        .bill-preview-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 1rem; font-weight: 700; font-size: .95rem;
+        }
+        .bill-preview-status {
+            font-size: .72rem; font-weight: 700; padding: .25rem .65rem;
+            border-radius: 12px; letter-spacing: .5px; text-transform: uppercase;
+        }
+        .status-paid    { background: rgba(16,185,129,.2);  color: #6ee7b7; border: 1px solid rgba(16,185,129,.3); }
+        .status-pending { background: rgba(245,158,11,.18); color: #fcd34d; border: 1px solid rgba(245,158,11,.3); }
+        .bill-fee-row {
+            display: flex; justify-content: space-between;
+            padding: .4rem 0; border-bottom: 1px solid var(--border);
+            font-size: .875rem; color: rgba(255,255,255,.75);
+        }
+        .bill-fee-row.total-row {
+            border-bottom: none; margin-top: .25rem; font-weight: 700;
+            font-size: 1rem; color: var(--white);
+        }
+        .fee-val { font-family: 'DM Mono', monospace; color: var(--teal-light); }
+        .total-row .fee-val { color: var(--amber); font-size: 1.1rem; }
+
+        /* ── AUTOCOMPLETE SEARCH ── */
+        .search-wrapper { position: relative; flex: 1; min-width: 200px; }
+        .search-wrapper input { width: 100%; }
+        .autocomplete-list {
+            position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 200;
+            background: #1a2f55; border: 1px solid rgba(14,165,176,.35);
+            border-radius: 10px; overflow: hidden;
+            box-shadow: 0 8px 30px rgba(0,0,0,.5);
+            max-height: 260px; overflow-y: auto;
+        }
+        .autocomplete-list:empty { display: none; }
+        .ac-item {
+            padding: .65rem 1rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: space-between;
+            gap: .75rem; border-bottom: 1px solid rgba(255,255,255,.05);
+            transition: background .15s;
+        }
+        .ac-item:last-child { border-bottom: none; }
+        .ac-item:hover, .ac-item.active { background: rgba(14,165,176,.15); }
+        .ac-item-name { font-size: .875rem; font-weight: 600; color: var(--white); }
+        .ac-item-sub  { font-size: .75rem; color: var(--muted); }
+        .ac-item-id   {
+            font-family: 'DM Mono', monospace; font-size: .75rem;
+            color: var(--teal-light); background: rgba(14,165,176,.12);
+            border: 1px solid rgba(14,165,176,.2); padding: .15rem .5rem; border-radius: 6px;
+            white-space: nowrap; flex-shrink: 0;
+        }
+        .ac-empty { padding: .75rem 1rem; font-size: .8rem; color: var(--muted); text-align: center; }
+
+        /* ── BOOKING STEPS (like patient page) ── */
+        .booking-steps {
+            display: flex; align-items: center; gap: .5rem;
+            margin-bottom: 1.25rem; flex-wrap: wrap;
+        }
+        .step {
+            display: flex; align-items: center; gap: .35rem;
+            padding: .3rem .75rem; border-radius: 20px;
+            font-size: .75rem; font-weight: 600;
+            background: rgba(255,255,255,.04); border: 1px solid var(--border);
+            color: var(--muted); transition: all .25s;
+        }
+        .step.active { background: var(--teal-glow); border-color: rgba(14,165,176,.4); color: var(--teal-light); }
+        .step.done   { background: rgba(16,185,129,.1); border-color: rgba(16,185,129,.3); color: #6ee7b7; }
+        .step-arrow  { color: rgba(255,255,255,.2); font-size: .8rem; }
+
+        /* ── SLOTS ── */
+        .slots-label { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .7px; color: var(--muted); margin-bottom: .5rem; margin-top: 1rem; }
+        .slots-grid  { display: flex; flex-wrap: wrap; gap: .45rem; margin-bottom: .75rem; }
+        .slot-btn {
+            padding: .4rem .85rem; border-radius: 8px; border: 1px solid rgba(255,255,255,.12);
+            background: rgba(255,255,255,.05); color: rgba(255,255,255,.75);
+            font-size: .8rem; font-weight: 500; font-family: 'DM Sans', sans-serif;
+            cursor: pointer; transition: all .15s;
+        }
+        .slot-btn:hover:not(.booked):not(.selected) {
+            background: var(--teal-glow); border-color: rgba(14,165,176,.4); color: var(--white);
+        }
+        .slot-btn.selected {
+            background: linear-gradient(135deg, var(--teal), #0891a0);
+            border-color: var(--teal); color: var(--white); font-weight: 700;
+            box-shadow: 0 2px 10px rgba(14,165,176,.4);
+        }
+        .slot-btn.booked {
+            background: rgba(239,68,68,.08); border-color: rgba(239,68,68,.2);
+            color: rgba(239,68,68,.5); cursor: not-allowed; text-decoration: line-through;
+        }
+
+        /* ── AVAIL BOX ── */
+        .avail-box {
+            margin-top: 1rem; padding: .85rem 1rem;
+            border-radius: 10px; font-size: .82rem; line-height: 1.6;
+            display: none;
+        }
+        .avail-box.show { display: block; }
+        .avail-box.info { background: rgba(14,165,176,.08); border: 1px solid rgba(14,165,176,.2); color: rgba(255,255,255,.8); }
+        .avail-box.warn { background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.25); color: #fcd34d; }
+        .avail-box.error { background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.25); color: #fca5a5; }
+        .avail-box strong { color: var(--teal-light); }
+        .avail-box.warn strong { color: var(--amber); }
+        .avail-box.error strong { color: #f87171; }
+
+        /* ── ID REVEAL CARD (after registration) ── */
+        .id-reveal-card {
+            background: rgba(16,185,129,.07); border: 1.5px solid rgba(16,185,129,.3);
+            border-radius: 14px; padding: 1.25rem 1.5rem; margin-top: 1.25rem;
+            display: none; animation: fadeUp .4s ease both;
+        }
+        .id-reveal-card.show { display: block; }
+        .id-reveal-header { font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .7px; color: #6ee7b7; margin-bottom: .7rem; }
+        .id-reveal-row { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
+        .id-reveal-label { font-size: .8rem; color: var(--muted); }
+        .id-reveal-value {
+            font-family: 'DM Mono', monospace; font-size: 1.4rem; font-weight: 700;
+            color: #6ee7b7; background: rgba(16,185,129,.12);
+            border: 1px solid rgba(16,185,129,.3); padding: .2rem .85rem; border-radius: 8px;
+        }
+        .id-reveal-sub { font-size: .78rem; color: var(--muted); margin-top: .4rem; }
+
+        /* ── TABLE SEARCH BAR ── */
+        .table-search-bar {
+            display: flex; align-items: center; gap: .75rem;
+            margin-bottom: 1rem; flex-wrap: wrap;
+        }
+        .table-search-input {
+            flex: 1; min-width: 220px;
+            background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);
+            color: var(--white); padding: .55rem .9rem; border-radius: 8px;
+            font-size: .875rem; font-family: 'DM Sans', sans-serif; outline: none;
+            transition: border-color .2s, box-shadow .2s;
+        }
+        .table-search-input::placeholder { color: rgba(255,255,255,.25); }
+        .table-search-input:focus {
+            border-color: var(--teal); box-shadow: 0 0 0 3px rgba(14,165,176,.15);
+            background: rgba(14,165,176,.06);
+        }
+        .search-result-count {
+            font-size: .78rem; color: var(--muted);
+            background: rgba(255,255,255,.04); border: 1px solid var(--border);
+            padding: .3rem .75rem; border-radius: 20px; white-space: nowrap;
+        }
+        tr.hidden-row { display: none; }
+
+        /* ── BILLING LOOKUP REDESIGN ── */
+        .billing-search-card {
+            background: var(--card-bg); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 1.5rem;
+        }
+        .billing-lookup-row { display: flex; gap: .75rem; align-items: flex-end; flex-wrap: wrap; }
+
+        @media(max-width: 768px) {
+            .navbar { padding: 0 1.2rem; }
+            .page { padding: 1.5rem 1rem 3rem; }
+            .form-grid { flex-direction: column; }
+            .form-field, .search-wrapper { min-width: 100%; }
+            .tab-bar { gap: .25rem; }
+            .tab-btn { font-size: .78rem; padding: .4rem .75rem; }
+        }
+
+        .tip-box {
+            margin-top: .85rem; font-size: .78rem; color: var(--muted);
+            background: rgba(14,165,176,.06); border: 1px solid rgba(14,165,176,.12);
+            border-radius: 8px; padding: .6rem .9rem;
+        }
+        .btn-book {
+            display: inline-flex; align-items: center; gap: .45rem;
+            padding: .7rem 1.6rem; border: none; border-radius: 8px;
+            font-size: .9rem; font-weight: 700; font-family: 'DM Sans', sans-serif;
+            cursor: pointer; transition: all .2s;
+            background: linear-gradient(135deg, var(--teal), #0891a0);
+            color: var(--white); box-shadow: 0 4px 14px rgba(14,165,176,.35); white-space: nowrap;
+        }
+        .btn-book:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(14,165,176,.5); }
+        .btn-book:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="navbar-brand">
+        <div class="logo-icon">🏥</div>
+        <div>
+            <span class="brand-text">HMS</span>
+            <span class="brand-sub">Hospital Management System</span>
+        </div>
+    </div>
+    <div class="navbar-right">
+        <span class="role-badge">Admin</span>
+        <a href="/logout" class="logout-btn">⏻ Logout</a>
+    </div>
+</nav>
+
+<!-- Jinja data passed to JS -->
+<script id="hms-data" type="application/json">
+{
+  "patients": {{ patients | tojson }},
+  "doctors":  {{ doctors  | tojson }},
+  "today":    "{{ today }}"
+}
+</script>
+
+<div class="page">
+
+    <div class="page-header">
+        <h1>Admin Dashboard</h1>
+        <p>Manage patients, doctors, medicines, appointments and billing.</p>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-grid">
+        <div class="stat-card" style="--accent:#0ea5b0;">
+            <div class="stat-icon">🧑</div>
+            <div class="stat-label">Total Patients</div>
+            <div class="stat-value">{{ stats.patients }}</div>
+        </div>
+        <div class="stat-card" style="--accent:#818cf8;">
+            <div class="stat-icon">👨‍⚕️</div>
+            <div class="stat-label">Total Doctors</div>
+            <div class="stat-value">{{ stats.doctors }}</div>
+        </div>
+        <div class="stat-card" style="--accent:#f59e0b;">
+            <div class="stat-icon">📅</div>
+            <div class="stat-label">Appointments Today</div>
+            <div class="stat-value">{{ stats.appointments }}</div>
+        </div>
+        <div class="stat-card" style="--accent:#ef4444;">
+            <div class="stat-icon">💳</div>
+            <div class="stat-label">Pending Bills</div>
+            <div class="stat-value">{{ stats.pending_bills }}</div>
+        </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('patients',this)">🧑 Patients</button>
+        <button class="tab-btn" onclick="switchTab('doctors',this)">👨‍⚕️ Doctors</button>
+        <button class="tab-btn" onclick="switchTab('medicines',this)">💊 Medicines</button>
+        <button class="tab-btn" onclick="switchTab('appointments',this)">📅 Appointments</button>
+        <button class="tab-btn" onclick="switchTab('billing',this)">💰 Billing</button>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- TAB: PATIENTS                               -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="tab-panel active" id="tab-patients">
+        <div class="section">
+            <div class="section-header"><div class="section-icon">➕</div><h2>Add Patient</h2></div>
+            <div class="form-card">
+                <form action="/add_patient" method="POST" id="addPatientForm">
+                    <div class="form-grid">
+                        <div class="form-field"><label>Full Name</label><input name="Name" id="pName" placeholder="e.g. Rahul Sharma" required></div>
+                        <div class="form-field"><label>Age</label><input name="Age" type="number" placeholder="32" required></div>
+                        <div class="form-field">
+                            <label>Gender</label>
+                            <select name="Gender" required>
+                                <option value="" disabled selected>Select</option>
+                                <option>Male</option><option>Female</option><option>Other</option>
+                            </select>
+                        </div>
+                        <div class="form-field"><label>Phone</label><input name="Phone" placeholder="9876543210" required></div>
+                        <div class="form-field"><label>Login Username</label><input name="Username" placeholder="rahul123" required></div>
+                        <div class="form-field"><label>Login Password</label><input name="Password" type="password" placeholder="••••••••" required></div>
+                        <button type="submit" class="btn btn-teal">＋ Add Patient</button>
+                    </div>
+                </form>
+
+                <!-- ── ID REVEAL after registration ── -->
+                {% if new_patient_id %}
+                <div class="id-reveal-card show">
+                    <div class="id-reveal-header">✅ Patient Registered Successfully — Share these credentials</div>
+                    <div class="id-reveal-row">
+                        <span class="id-reveal-label">Patient ID:</span>
+                        <span class="id-reveal-value">{{ new_patient_id }}</span>
+                        <span class="id-reveal-label" style="margin-left:.5rem;">Username:</span>
+                        <span style="font-family:'DM Mono',monospace;font-size:1rem;font-weight:700;color:var(--teal-light);">{{ new_patient_username }}</span>
+                    </div>
+                    <div class="id-reveal-sub">ℹ️ Give this Patient ID to the patient. They will need it to be identified in appointments and billing.</div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Patient table with live search -->
+            <div class="table-search-bar">
+                <input class="table-search-input" id="patientSearch" placeholder="🔍 Search patients by name, phone or ID…" oninput="filterTable('patientSearch','patientTbody','patientCount')">
+                <span class="search-result-count" id="patientCount">{{ patients|length }} patients</span>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead><tr><th>ID</th><th>Name</th><th>Age</th><th>Gender</th><th>Phone</th></tr></thead>
+                    <tbody id="patientTbody">
+                        {% for p in patients %}
+                        <tr data-search="{{ p.Name|lower }} {{ p.Phone }} {{ p.PatientID }}">
+                            <td class="id-cell">{{ p.PatientID }}</td>
+                            <td>{{ p.Name }}</td>
+                            <td>{{ p.Age }}</td>
+                            <td>{{ p.Gender }}</td>
+                            <td>{{ p.Phone }}</td>
+                        </tr>
+                        {% else %}
+                        <tr class="empty-row"><td colspan="5">No patients added yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- TAB: DOCTORS                                -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-doctors">
+        <div class="section">
+            <div class="section-header"><div class="section-icon">👨‍⚕️</div><h2>Add Doctor</h2></div>
+            <div class="form-card">
+                <form action="/add_doctor" method="POST" id="addDoctorForm">
+                    <div class="form-grid">
+                        <div class="form-field"><label>Doctor Name</label><input name="Name" placeholder="Dr. Priya Nair" required></div>
+                        <div class="form-field"><label>Specialization</label><input name="Specialization" placeholder="Cardiologist" required></div>
+                        <div class="form-field"><label>Consultation Fee (₹)</label><input name="ConsultationFee" type="number" step="0.01" placeholder="500.00" required></div>
+                        <div class="form-field"><label>Login Username</label><input name="Username" placeholder="drpriya" required></div>
+                        <div class="form-field"><label>Login Password</label><input name="Password" type="password" placeholder="••••••••" required></div>
+                        <button type="submit" class="btn btn-teal">＋ Add Doctor</button>
+                    </div>
+                </form>
+
+                {% if new_doctor_id %}
+                <div class="id-reveal-card show">
+                    <div class="id-reveal-header">✅ Doctor Registered Successfully — Share these credentials</div>
+                    <div class="id-reveal-row">
+                        <span class="id-reveal-label">Doctor ID:</span>
+                        <span class="id-reveal-value">{{ new_doctor_id }}</span>
+                        <span class="id-reveal-label" style="margin-left:.5rem;">Username:</span>
+                        <span style="font-family:'DM Mono',monospace;font-size:1rem;font-weight:700;color:var(--teal-light);">{{ new_doctor_username }}</span>
+                    </div>
+                    <div class="id-reveal-sub">ℹ️ Share the Doctor ID and username with the doctor for their login.</div>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="table-search-bar">
+                <input class="table-search-input" id="doctorSearch" placeholder="🔍 Search doctors by name or specialization…" oninput="filterTable('doctorSearch','doctorTbody','doctorCount')">
+                <span class="search-result-count" id="doctorCount">{{ doctors|length }} doctors</span>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead><tr><th>ID</th><th>Name</th><th>Specialization</th><th>Consultation Fee</th></tr></thead>
+                    <tbody id="doctorTbody">
+                        {% for d in doctors %}
+                        <tr data-search="{{ d.Name|lower }} {{ d.Specialization|lower }} {{ d.DoctorID }}">
+                            <td class="id-cell">{{ d.DoctorID }}</td>
+                            <td>{{ d.Name }}</td>
+                            <td>{{ d.Specialization }}</td>
+                            <td>₹{{ "%.2f"|format(d.ConsultationFee or 0) }}</td>
+                        </tr>
+                        {% else %}
+                        <tr class="empty-row"><td colspan="4">No doctors added yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- TAB: MEDICINES                              -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-medicines">
+        <div class="section">
+            <div class="section-header"><div class="section-icon">💊</div><h2>Medicine Management</h2></div>
+            <div class="form-card">
+                <!-- Live duplicate check banner -->
+                <div id="medExistsBanner" style="display:none;margin-bottom:1rem;padding:.75rem 1rem;border-radius:10px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);font-size:.875rem;color:#fcd34d;">
+                    ⚠️ <strong id="medExistsText"></strong> — this medicine already exists. Submitting will <strong>add to its stock</strong> instead of creating a duplicate.
+                </div>
+
+                <form action="/add_medicine" method="POST" id="addMedForm">
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label>Medicine Name</label>
+                            <input name="Name" id="medName" placeholder="Paracetamol" required
+                                   oninput="scheduleMedCheck()" autocomplete="off">
+                        </div>
+                        <div class="form-field">
+                            <label>Dosage</label>
+                            <input name="Dosage" id="medDosage" placeholder="500mg" required
+                                   oninput="scheduleMedCheck()">
+                        </div>
+                        <div class="form-field">
+                            <label>Form</label>
+                            <select name="Form" id="medForm" required onchange="scheduleMedCheck()">
+                                <option value="" disabled selected>Select</option>
+                                <option>Tablet</option><option>Capsule</option><option>Syrup</option>
+                                <option>Injection</option><option>Cream</option><option>Drops</option><option>Powder</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label>Stock Qty</label>
+                            <input name="Stock" id="medStock" type="number" min="1" placeholder="200" required>
+                        </div>
+                        <div class="form-field">
+                            <label>Price per Unit (₹)</label>
+                            <input name="Price" type="number" step="0.01" placeholder="5.00" required>
+                        </div>
+                        <button type="submit" class="btn btn-teal" id="medSubmitBtn">＋ Add Medicine</button>
+                    </div>
+                    <p style="font-size:.78rem;color:var(--muted);margin-top:.65rem;">
+                        💡 Min stock is fixed at <strong style="color:var(--teal-light);">10 units</strong>. If this medicine already exists (same name + dosage + form), the stock you enter will be <em>added</em> to the existing quantity.
+                    </p>
+                </form>
+            </div>
+
+            <!-- ── Per-row Stock Adjust ── -->
+            <div class="section-header" style="margin-top:1.5rem;">
+                <div class="section-icon">🔧</div><h2>Adjust Stock</h2>
+            </div>
+            <div class="form-card" style="margin-bottom:1rem;">
+                <form action="/adjust_stock" method="POST" id="adjustStockForm">
+                    <div class="form-grid">
+                        <div class="form-field" style="flex:2;min-width:220px;">
+                            <label>Medicine</label>
+                            <select name="MedicineID" id="adjustMedSelect" required onchange="updateAdjustStock()">
+                                <option value="" disabled selected>Select a medicine…</option>
+                                {% for m in medicines %}
+                                <option value="{{ m.MedicineID }}" data-stock="{{ m.Stock }}">
+                                    {{ m.Name }} — {{ m.Dosage }} {{ m.Form }} (Stock: {{ m.Stock }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label>Action</label>
+                            <select name="action" id="adjustAction" required>
+                                <option value="add">➕ Add Units</option>
+                                <option value="remove">➖ Remove Units</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label>Quantity</label>
+                            <input name="qty" type="number" min="1" placeholder="e.g. 50" required id="adjustQty">
+                        </div>
+                        <button type="submit" class="btn btn-teal">Update Stock</button>
+                    </div>
+                    <div id="adjustInfo" style="display:none;margin-top:.6rem;font-size:.8rem;color:var(--muted);">
+                        Current stock: <span id="currentStockInfo" style="color:var(--teal-light);font-weight:700;"></span>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Medicine table -->
+            <div class="table-search-bar">
+                <input class="table-search-input" id="medicineSearch" placeholder="🔍 Search medicines by name, dosage or form…" oninput="filterTable('medicineSearch','medicineTbody','medicineCount')">
+                <span class="search-result-count" id="medicineCount">{{ medicines|length }} medicines</span>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead><tr><th>ID</th><th>Name</th><th>Dosage</th><th>Form</th><th>Price (₹)</th><th>Stock</th><th>Min Stock</th><th>Status</th></tr></thead>
+                    <tbody id="medicineTbody">
+                        {% for m in medicines %}
+                        <tr data-search="{{ m.Name|lower }} {{ m.Dosage|lower }} {{ m.Form|lower }}">
+                            <td class="id-cell">{{ m.MedicineID }}</td>
+                            <td>{{ m.Name }}</td>
+                            <td>{{ m.Dosage }}</td>
+                            <td>{{ m.Form }}</td>
+                            <td>₹{{ "%.2f"|format(m.Price or 0) }}</td>
+                            <td style="font-family:'DM Mono',monospace;font-weight:700;">{{ m.Stock }}</td>
+                            <td style="font-family:'DM Mono',monospace;color:var(--muted);">{{ min_stock }}</td>
+                            <td>
+                                {% if m.Stock < min_stock %}
+                                    <span class="badge badge-low">⚠ Low Stock</span>
+                                {% else %}
+                                    <span class="badge badge-ok">✓ Adequate</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr class="empty-row"><td colspan="8">No medicines added yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Stock Alerts -->
+        <div class="section">
+            <div class="section-header">
+                <div class="section-icon" style="background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.3);">⚠️</div>
+                <h2>Low Stock Alerts <span style="font-size:.75rem;color:var(--muted);font-weight:400;">(trigger-generated)</span></h2>
+            </div>
+            {% if stock_alerts %}
+            <div class="table-wrapper">
+                <table>
+                    <thead><tr><th>Alert ID</th><th>Medicine</th><th>Current Stock</th><th>Min Stock</th><th>Alert Time</th></tr></thead>
+                    <tbody>
+                        {% for a in stock_alerts %}
+                        <tr style="background:rgba(239,68,68,.04);">
+                            <td class="id-cell">{{ a.AlertID }}</td>
+                            <td>{{ a.MedicineName }}</td>
+                            <td style="color:#fca5a5;font-family:'DM Mono',monospace;font-weight:700;">{{ a.CurrentStock }}</td>
+                            <td style="font-family:'DM Mono',monospace;">{{ a.MinStock }}</td>
+                            <td style="color:var(--muted);font-size:.8rem;">{{ a.AlertTime }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:10px;padding:.85rem 1.1rem;font-size:.875rem;color:#6ee7b7;">
+                ✓ No low stock alerts. All medicines are adequately stocked.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- TAB: APPOINTMENTS  (with patient-like UX)   -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-appointments">
+        <div class="section">
+            <div class="section-header"><div class="section-icon">📅</div><h2>Schedule Appointment</h2></div>
+            <div class="form-card">
+
+                <!-- Step indicators (like patient page) -->
+                <div class="booking-steps">
+                    <div class="step active" id="astep1">① Search Patient</div>
+                    <span class="step-arrow">→</span>
+                    <div class="step" id="astep2">② Search Doctor</div>
+                    <span class="step-arrow">→</span>
+                    <div class="step" id="astep3">③ Pick Date</div>
+                    <span class="step-arrow">→</span>
+                    <div class="step" id="astep4">④ Choose Slot</div>
+                </div>
+
+                <form action="/add_appointment" method="POST" id="apptForm">
+                    <div class="form-grid">
+
+                        <!-- Patient search autocomplete -->
+                        <div class="form-field" style="flex:1.5;min-width:200px;">
+                            <label>Patient</label>
+                            <div class="search-wrapper">
+                                <input type="text" id="patientSearchInput" placeholder="Type name or patient ID…"
+                                       autocomplete="off"
+                                       oninput="acSearch('patient')"
+                                       onkeydown="acKeyNav(event,'patient')"
+                                       onfocus="acSearch('patient')"
+                                       onblur="setTimeout(()=>closeAc('patient'),200)">
+                                <div class="autocomplete-list" id="patientAcList"></div>
+                            </div>
+                            <input type="hidden" name="PatientID" id="patientIdHidden">
+                        </div>
+
+                        <!-- Doctor search autocomplete -->
+                        <div class="form-field" style="flex:1.5;min-width:200px;">
+                            <label>Doctor</label>
+                            <div class="search-wrapper">
+                                <input type="text" id="doctorSearchInput" placeholder="Type name or doctor ID…"
+                                       autocomplete="off"
+                                       oninput="acSearch('doctor')"
+                                       onkeydown="acKeyNav(event,'doctor')"
+                                       onfocus="acSearch('doctor')"
+                                       onblur="setTimeout(()=>closeAc('doctor'),200)">
+                                <div class="autocomplete-list" id="doctorAcList"></div>
+                            </div>
+                            <input type="hidden" name="DoctorID" id="doctorIdHidden">
+                        </div>
+
+                        <!-- Date -->
+                        <div class="form-field" style="max-width:210px;">
+                            <label>Date</label>
+                            <input type="date" name="Date" id="apptDateAdmin"
+                                   min="{{ today.isoformat() }}" disabled
+                                   onchange="adminOnDateChange(this)">
+                        </div>
+
+                        <!-- Hidden time -->
+                        <input type="hidden" name="Time" id="apptTimeHiddenAdmin">
+                    </div>
+
+                    <!-- Availability box -->
+                    <div class="avail-box" id="adminAvailBox"></div>
+
+                    <!-- Slots -->
+                    <div id="adminSlotsSection" style="display:none;">
+                        <div class="slots-label">Available Time Slots — select one</div>
+                        <div class="slots-grid" id="adminSlotsGrid"></div>
+                    </div>
+
+                    <div style="margin-top:1rem;">
+                        <button type="submit" class="btn-book" id="adminBookBtn" disabled>📌 Schedule Appointment</button>
+                    </div>
+                </form>
+
+                <div class="tip-box">
+                    💡 Start typing a patient or doctor name — suggestions appear automatically. Select them, then pick the date and time slot.
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header"><div class="section-icon">🗓️</div><h2>All Appointments</h2></div>
+            <div class="table-search-bar">
+                <input class="table-search-input" id="apptSearch" placeholder="🔍 Filter by patient, doctor or date…" oninput="filterTable('apptSearch','apptTbody','apptCount')">
+                <span class="search-result-count" id="apptCount">{{ all_appointments|length }} appointments</span>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead><tr><th>ID</th><th>Patient</th><th>Doctor</th><th>Date</th><th>Time</th><th>Status</th></tr></thead>
+                    <tbody id="apptTbody">
+                        {% for a in all_appointments %}
+                        <tr data-search="{{ a.PatientName|lower }} {{ a.DoctorName|lower }} {{ a.Date }}">
+                            <td class="id-cell">{{ a.AppointmentID }}</td>
+                            <td>{{ a.PatientName }}</td>
+                            <td>{{ a.DoctorName }}</td>
+                            <td>{{ a.Date }}</td>
+                            <td>{{ a.Time }}</td>
+                            <td>
+                                {% if a.Status == 'Completed' %}
+                                    <span class="badge badge-completed"><span class="badge-dot"></span>Completed</span>
+                                {% elif a.Date == today %}
+                                    <span class="badge badge-today"><span class="badge-dot"></span>Today</span>
+                                {% else %}
+                                    <span class="badge badge-pending"><span class="badge-dot"></span>Pending</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr class="empty-row"><td colspan="6">No appointments found.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- TAB: BILLING                                -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-billing">
+
+        <!-- Step 1: Lookup by patient name search -->
+        <div class="section">
+            <div class="section-header"><div class="section-icon">🔍</div><h2>Patient Billing Lookup</h2></div>
+            <div class="billing-search-card">
+                <div class="billing-lookup-row">
+                    <div class="form-field" style="flex:1.5;min-width:220px;">
+                        <label>Search Patient</label>
+                        <div class="search-wrapper">
+                            <input type="text" id="billingPatientSearch" placeholder="Type patient name or ID…"
+                                   autocomplete="off"
+                                   oninput="acSearch('billing')"
+                                   onkeydown="acKeyNav(event,'billing')"
+                                   onfocus="acSearch('billing')"
+                                   onblur="setTimeout(()=>closeAc('billing'),200)">
+                            <div class="autocomplete-list" id="billingAcList"></div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-teal" onclick="lookupPatient()">🔍 Lookup Bill</button>
+                </div>
+
+                <!-- Bill preview card -->
+                <div id="billPreview" style="display:none;margin-top:1.25rem;">
+                    <div class="bill-preview-card">
+                        <div class="bill-preview-header">
+                            <span id="previewPatientName"></span>
+                            <span class="bill-preview-status" id="previewStatus"></span>
+                        </div>
+                        <div class="bill-fee-row">
+                            <span>Doctor Fee</span>
+                            <span id="previewDocFee" class="fee-val">—</span>
+                        </div>
+                        <div class="bill-fee-row">
+                            <span>Hospital Fee</span>
+                            <span id="previewHospFee" class="fee-val">—</span>
+                        </div>
+                        <div class="bill-fee-row">
+                            <span>Medicine Fee</span>
+                            <span id="previewMedFee" class="fee-val">—</span>
+                        </div>
+                        <div class="bill-fee-row total-row">
+                            <span>Total</span>
+                            <span id="previewTotal" class="fee-val">—</span>
+                        </div>
+                        <div style="margin-top:1rem;display:flex;gap:.75rem;flex-wrap:wrap;" id="previewActions"></div>
+                    </div>
+                </div>
+                <div id="noBillMsg" style="display:none;margin-top:1rem;color:var(--muted);font-size:.875rem;">
+                    ℹ️ No existing bill found for this patient.
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Create bill with autocomplete -->
+        <div class="section">
+            <div class="section-header"><div class="section-icon">🧾</div><h2>Generate Bill</h2></div>
+            <div class="form-card">
+                <form action="/add_bill" method="POST">
+                    <div class="form-grid">
+                        <div class="form-field" style="flex:1.5;min-width:220px;">
+                            <label>Patient</label>
+                            <div class="search-wrapper">
+                                <input type="text" id="createBillSearch" placeholder="Type patient name or ID…"
+                                       autocomplete="off"
+                                       oninput="acSearch('createBill')"
+                                       onkeydown="acKeyNav(event,'createBill')"
+                                       onfocus="acSearch('createBill')"
+                                       onblur="setTimeout(()=>closeAc('createBill'),200)">
+                                <div class="autocomplete-list" id="createBillAcList"></div>
+                            </div>
+                            <input type="hidden" name="PatientID" id="createBillPatientId" required>
+                        </div>
+                        <button type="submit" class="btn btn-teal">🧾 Generate Bill</button>
+                    </div>
+                    <p style="font-size:.8rem;color:var(--muted);margin-top:.75rem;">
+                        💡 Hospital fee (₹300) is fixed. Doctor fee is fetched from doctor profile. Medicine fee is calculated from prescription. Stock reduces after billing.
+                    </p>
+                </form>
+            </div>
+        </div>
+
+        <!-- All bills table with name search -->
+        <div class="section">
+            <div class="section-header"><div class="section-icon">📋</div><h2>All Bills</h2></div>
+            <div class="table-search-bar">
+                <input class="table-search-input" id="billsSearch" placeholder="🔍 Search by patient name or bill ID…" oninput="filterTable('billsSearch','billsTbody','billsCount')">
+                <span class="search-result-count" id="billsCount">{{ all_bills|length }} bills</span>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead><tr><th>Bill ID</th><th>Patient</th><th>Doctor Fee</th><th>Hospital Fee</th><th>Medicine Fee</th><th>Total</th><th>Status</th><th>Action</th></tr></thead>
+                    <tbody id="billsTbody">
+                        {% for b in all_bills %}
+                        <tr data-search="{{ b.PatientName|lower }} {{ b.BillID }}">
+                            <td class="id-cell">{{ b.BillID }}</td>
+                            <td>{{ b.PatientName }}</td>
+                            <td>₹{{ "%.2f"|format(b.DoctorFee or 0) }}</td>
+                            <td>₹{{ "%.2f"|format(b.HospitalFee or 0) }}</td>
+                            <td>₹{{ "%.2f"|format(b.MedicineFee or 0) }}</td>
+                            <td style="font-weight:700;">₹{{ "%.2f"|format(b.TotalAmount or 0) }}</td>
+                            <td>
+                                {% if b.Status == 'Paid' %}
+                                    <span class="badge badge-completed"><span class="badge-dot"></span>Paid</span>
+                                {% else %}
+                                    <span class="badge badge-pending"><span class="badge-dot"></span>Pending</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if b.Status != 'Paid' %}
+                                    <a href="/mark_paid/{{ b.BillID }}" class="btn btn-teal"
+                                       style="font-size:.75rem;padding:.3rem .75rem;"
+                                       onclick="return confirm('Mark Bill #{{ b.BillID }} as paid (cash)?')">
+                                        💵 Mark Paid (Cash)
+                                    </a>
+                                {% else %}
+                                    <span style="color:var(--muted);font-size:.8rem;">✓ Settled</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr class="empty-row"><td colspan="8">No bills created yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pending Dues -->
+        <div class="section">
+            <div class="section-header">
+                <div class="section-icon" style="background:rgba(245,158,11,.15);border-color:rgba(245,158,11,.3);">💳</div>
+                <h2>Pending Dues <span style="font-size:.75rem;color:var(--muted);font-weight:400;">(trigger-generated)</span></h2>
+            </div>
+            {% if pending_dues %}
+            <div class="table-wrapper">
+                <table>
+                    <thead><tr><th>Due ID</th><th>Bill ID</th><th>Patient</th><th>Amount Due (₹)</th><th>Created At</th></tr></thead>
+                    <tbody>
+                        {% for d in pending_dues %}
+                        <tr style="background:rgba(245,158,11,.03);">
+                            <td class="id-cell">{{ d.DueID }}</td>
+                            <td class="id-cell">{{ d.BillID }}</td>
+                            <td>{{ d.PatientName }}</td>
+                            <td style="font-family:'DM Mono',monospace;font-weight:700;color:#fcd34d;">₹{{ "%.2f"|format(d.TotalAmount or 0) }}</td>
+                            <td style="color:var(--muted);font-size:.8rem;">{{ d.CreatedAt }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:10px;padding:.85rem 1.1rem;font-size:.875rem;color:#6ee7b7;">
+                ✓ No pending dues. All bills have been paid.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+</div><!-- .page -->
+
+<div id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   DATA FROM JINJA
+═══════════════════════════════════════════════════ */
+const HMS = JSON.parse(document.getElementById('hms-data').textContent);
+const ALL_PATIENTS = HMS.patients;  // [{PatientID, Name, Phone, Age, Gender, ...}]
+const ALL_DOCTORS  = HMS.doctors;   // [{DoctorID, Name, Specialization, ConsultationFee, ...}]
+
+/* ═══════════════════════════════════════════════════
+   TAB SWITCHING
+═══════════════════════════════════════════════════ */
+function switchTab(name, btn) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    btn.classList.add('active');
+    const url = new URL(window.location);
+    url.searchParams.set('tab', name);
+    window.history.replaceState({}, '', url);
+}
+
+/* ═══════════════════════════════════════════════════
+   LIVE TABLE FILTER (for all tables)
+═══════════════════════════════════════════════════ */
+function filterTable(inputId, tbodyId, countId) {
+    const q = document.getElementById(inputId).value.toLowerCase().trim();
+    const rows = document.querySelectorAll(`#${tbodyId} tr[data-search]`);
+    let visible = 0;
+    rows.forEach(row => {
+        const match = row.getAttribute('data-search').includes(q);
+        row.classList.toggle('hidden-row', !match);
+        if (match) visible++;
+    });
+    const countEl = document.getElementById(countId);
+    if (countEl) {
+        const total = rows.length;
+        countEl.textContent = q ? `${visible} of ${total}` : `${total}`;
+    }
+}
+
+/* ═══════════════════════════════════════════════════
+   AUTOCOMPLETE ENGINE
+═══════════════════════════════════════════════════ */
+const AC_CONFIGS = {
+    patient: {
+        inputId: 'patientSearchInput',
+        listId:  'patientAcList',
+        hiddenId:'patientIdHidden',
+        data: ALL_PATIENTS,
+        getLabel: p => p.Name,
+        getSub:   p => `Phone: ${p.Phone || '—'} | Age: ${p.Age || '—'}`,
+        getId:    p => p.PatientID,
+        onSelect: (item) => {
+            adminSetStep(2);
+            document.getElementById('doctorSearchInput').focus();
+        }
+    },
+    doctor: {
+        inputId: 'doctorSearchInput',
+        listId:  'doctorAcList',
+        hiddenId:'doctorIdHidden',
+        data: ALL_DOCTORS,
+        getLabel: d => d.Name,
+        getSub:   d => d.Specialization || '—',
+        getId:    d => d.DoctorID,
+        onSelect: async (item) => {
+            adminSetStep(3);
+            await loadAdminDoctorAvailability(item.DoctorID);
+        }
+    },
+    billing: {
+        inputId: 'billingPatientSearch',
+        listId:  'billingAcList',
+        hiddenId: null,
+        _selectedId: null,
+        data: ALL_PATIENTS,
+        getLabel: p => p.Name,
+        getSub:   p => `ID: ${p.PatientID} | Phone: ${p.Phone || '—'}`,
+        getId:    p => p.PatientID,
+        onSelect: (item) => { AC_CONFIGS.billing._selectedId = item.PatientID; }
+    },
+    createBill: {
+        inputId: 'createBillSearch',
+        listId:  'createBillAcList',
+        hiddenId:'createBillPatientId',
+        data: ALL_PATIENTS,
+        getLabel: p => p.Name,
+        getSub:   p => `ID: ${p.PatientID} | Phone: ${p.Phone || '—'}`,
+        getId:    p => p.PatientID,
+        onSelect: null
+    }
+};
+
+let acActiveIdx = {};
+
+function acSearch(key) {
+    const cfg   = AC_CONFIGS[key];
+    const input = document.getElementById(cfg.inputId);
+    const list  = document.getElementById(cfg.listId);
+    const q     = input.value.toLowerCase().trim();
+    acActiveIdx[key] = -1;
+
+    if (!q) { list.innerHTML = ''; return; }
+
+    const matches = cfg.data.filter(item => {
+        const id = String(cfg.getId(item));
+        return cfg.getLabel(item).toLowerCase().includes(q) || id.includes(q);
+    }).slice(0, 8);
+
+    if (!matches.length) {
+        list.innerHTML = `<div class="ac-empty">No results for "${input.value}"</div>`;
+        return;
+    }
+
+    list.innerHTML = matches.map((item, i) => `
+        <div class="ac-item" data-idx="${i}" onmousedown="acSelect('${key}',${i})">
+            <div>
+                <div class="ac-item-name">${highlight(cfg.getLabel(item), q)}</div>
+                <div class="ac-item-sub">${cfg.getSub(item)}</div>
+            </div>
+            <span class="ac-item-id">${cfg.getId(item)}</span>
+        </div>
+    `).join('');
+
+    list._matches = matches;
+}
+
+function highlight(text, q) {
+    if (!q) return text;
+    const idx = text.toLowerCase().indexOf(q);
+    if (idx === -1) return text;
+    return text.slice(0, idx) +
+           `<strong style="color:var(--teal-light)">${text.slice(idx, idx + q.length)}</strong>` +
+           text.slice(idx + q.length);
+}
+
+function acKeyNav(e, key) {
+    const list  = document.getElementById(AC_CONFIGS[key].listId);
+    const items = list.querySelectorAll('.ac-item');
+    if (!items.length) return;
+
+    if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        acActiveIdx[key] = Math.min((acActiveIdx[key] ?? -1) + 1, items.length - 1);
+        items.forEach((el, i) => el.classList.toggle('active', i === acActiveIdx[key]));
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        acActiveIdx[key] = Math.max((acActiveIdx[key] ?? 0) - 1, 0);
+        items.forEach((el, i) => el.classList.toggle('active', i === acActiveIdx[key]));
+    } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const idx = acActiveIdx[key] ?? 0;
+        if (items[idx]) acSelect(key, idx);
+    } else if (e.key === 'Escape') {
+        closeAc(key);
+    }
+}
+
+function acSelect(key, idx) {
+    const cfg   = AC_CONFIGS[key];
+    const list  = document.getElementById(cfg.listId);
+    const item  = list._matches && list._matches[idx];
+    if (!item) return;
+
+    document.getElementById(cfg.inputId).value = cfg.getLabel(item);
+    if (cfg.hiddenId) document.getElementById(cfg.hiddenId).value = cfg.getId(item);
+    list.innerHTML = '';
+
+    if (cfg.onSelect) cfg.onSelect(item);
+}
+
+function closeAc(key) {
+    const list = document.getElementById(AC_CONFIGS[key].listId);
+    if (list) list.innerHTML = '';
+}
+
+/* ═══════════════════════════════════════════════════
+   PATIENT BILLING LOOKUP (using autocomplete selection)
+═══════════════════════════════════════════════════ */
+async function lookupPatient() {
+    const cfg = AC_CONFIGS.billing;
+    let pid = cfg._selectedId;
+
+    // Fallback: if user typed a number directly
+    if (!pid) {
+        const raw = document.getElementById('billingPatientSearch').value.trim();
+        if (/^\d+$/.test(raw)) pid = parseInt(raw);
+    }
+
+    if (!pid) { showToast('Please select a patient from the dropdown first'); return; }
+
+    // Also prefill Generate Bill search
+    const patient = ALL_PATIENTS.find(p => p.PatientID === pid);
+    if (patient) {
+        document.getElementById('createBillSearch').value = patient.Name;
+        document.getElementById('createBillPatientId').value = patient.PatientID;
+    }
+
+    const preview = document.getElementById('billPreview');
+    const noBill  = document.getElementById('noBillMsg');
+    preview.style.display = 'none';
+    noBill.style.display  = 'none';
+
+    const res  = await fetch(`/api/patient_bill/${pid}`);
+    const data = await res.json();
+
+    if (!data.found) {
+        noBill.style.display = 'block';
+        noBill.innerHTML = `ℹ️ No existing bill found for <strong>${patient ? patient.Name : 'Patient ID ' + pid}</strong>. Use "Generate Bill" below to create one.`;
+        return;
+    }
+
+    document.getElementById('previewPatientName').textContent = `👤 ${data.PatientName} (ID: ${data.PatientID})`;
+    document.getElementById('previewStatus').textContent      = data.Status;
+    document.getElementById('previewStatus').className        = 'bill-preview-status ' + (data.Status === 'Paid' ? 'status-paid' : 'status-pending');
+    document.getElementById('previewDocFee').textContent      = `₹${(data.DoctorFee||0).toFixed(2)}`;
+    document.getElementById('previewHospFee').textContent     = `₹${(data.HospitalFee||0).toFixed(2)}`;
+    document.getElementById('previewMedFee').textContent      = `₹${(data.MedicineFee||0).toFixed(2)}`;
+    document.getElementById('previewTotal').textContent       = `₹${(data.TotalAmount||0).toFixed(2)}`;
+
+    const actions = document.getElementById('previewActions');
+    actions.innerHTML = '';
+    if (data.Status !== 'Paid') {
+        actions.innerHTML = `
+            <a href="/mark_paid/${data.BillID}" class="btn btn-teal"
+               onclick="return confirm('Mark Bill #${data.BillID} as paid (cash)?')">
+               💵 Mark Paid (Cash)
+            </a>
+            <span style="font-size:.8rem;color:var(--muted);align-self:center;">or patient can pay online from their dashboard</span>`;
+    } else {
+        actions.innerHTML = `<span style="color:#6ee7b7;font-size:.875rem;">✓ This bill is fully settled.</span>`;
+    }
+
+    preview.style.display = 'block';
+}
+
+/* ═══════════════════════════════════════════════════
+   ADMIN APPOINTMENT — STEP INDICATOR
+═══════════════════════════════════════════════════ */
+function adminSetStep(active) {
+    for (let i = 1; i <= 4; i++) {
+        const el = document.getElementById(`astep${i}`);
+        if (!el) continue;
+        if (i < active)        el.className = 'step done';
+        else if (i === active) el.className = 'step active';
+        else                   el.className = 'step';
+    }
+}
+
+/* ═══════════════════════════════════════════════════
+   ADMIN APPOINTMENT — DOCTOR AVAILABILITY + SLOTS
+   (reuses same /api/doctor_availability endpoint)
+═══════════════════════════════════════════════════ */
+let adminAvailData = null;
+
+async function loadAdminDoctorAvailability(doctorId) {
+    adminAvailData = null;
+    const dateInput = document.getElementById('apptDateAdmin');
+    dateInput.disabled = true;
+    dateInput.value = '';
+    document.getElementById('apptTimeHiddenAdmin').value = '';
+    document.getElementById('adminBookBtn').disabled = true;
+    document.getElementById('adminSlotsSection').style.display = 'none';
+    document.getElementById('adminSlotsGrid').innerHTML = '';
+    showAdminAvailBox('', '');
+
+    const res  = await fetch(`/api/doctor_availability/${doctorId}`);
+    const data = await res.json();
+
+    if (data.error) {
+        showAdminAvailBox('error', `❌ ${data.error}`);
+        return;
+    }
+
+    adminAvailData = data;
+    dateInput.disabled = false;
+    showAdminAvailBox('info',
+        `📅 Available on: <strong>${data.available_days.join(', ')}</strong> &nbsp;|&nbsp; ` +
+        `Hours: ${data.start_time} – ${data.end_time}` +
+        (data.next_available ? `<br>📌 Next open date: <strong>${formatAdminDate(data.next_available)}</strong>` : '')
+    );
+}
+
+function adminOnDateChange(input) {
+    const dateVal = input.value;
+    if (!dateVal || !adminAvailData) return;
+
+    document.getElementById('apptTimeHiddenAdmin').value = '';
+    document.getElementById('adminBookBtn').disabled = true;
+    document.getElementById('adminSlotsSection').style.display = 'none';
+    document.getElementById('adminSlotsGrid').innerHTML = '';
+    adminSetStep(3);
+
+    const dayName = new Date(dateVal + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long' });
+
+    if (!adminAvailData.available_days.includes(dayName)) {
+        showAdminAvailBox('error',
+            `❌ <strong>Doctor not available on ${dayName}s.</strong> Available: ${adminAvailData.available_days.join(', ')}` +
+            (adminAvailData.next_available ? `<br>📅 Next: <strong>${formatAdminDate(adminAvailData.next_available)}</strong>` : '')
+        );
+        return;
+    }
+
+    if (adminAvailData.fully_booked_dates.includes(dateVal)) {
+        showAdminAvailBox('warn', `📵 <strong>Fully booked on ${formatAdminDate(dateVal)}.</strong> Please pick another date.`);
+        return;
+    }
+
+    const booked = adminAvailData.booked_slots[dateVal] || [];
+    const all    = adminAvailData.all_slots;
+    showAdminAvailBox('info',
+        `✅ <strong>${dayName}, ${formatAdminDate(dateVal)}</strong> — ${all.length - booked.length} of ${all.length} slots free.`
+    );
+
+    adminRenderSlots(all, booked);
+}
+
+function adminRenderSlots(allSlots, booked) {
+    const grid = document.getElementById('adminSlotsGrid');
+    grid.innerHTML = '';
+    allSlots.forEach(slot => {
+        const isBooked = booked.includes(slot);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'slot-btn' + (isBooked ? ' booked' : '');
+        btn.textContent = slot + (isBooked ? ' ✗' : '');
+        if (!isBooked) {
+            btn.onclick = function () {
+                document.querySelectorAll('#adminSlotsGrid .slot-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                document.getElementById('apptTimeHiddenAdmin').value = slot;
+                document.getElementById('adminBookBtn').disabled = false;
+                adminSetStep(4);
+            };
+        }
+        grid.appendChild(btn);
+    });
+    document.getElementById('adminSlotsSection').style.display = 'block';
+}
+
+function showAdminAvailBox(type, html) {
+    const box = document.getElementById('adminAvailBox');
+    box.className = type ? `avail-box show ${type}` : 'avail-box';
+    box.innerHTML = html;
+}
+
+function formatAdminDate(iso) {
+    return new Date(iso + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+/* validate before submit */
+document.getElementById('apptForm').addEventListener('submit', function(e) {
+    if (!document.getElementById('patientIdHidden').value) {
+        e.preventDefault(); showToast('Please select a patient'); return;
+    }
+    if (!document.getElementById('doctorIdHidden').value) {
+        e.preventDefault(); showToast('Please select a doctor'); return;
+    }
+    if (!document.getElementById('apptDateAdmin').value) {
+        e.preventDefault(); showToast('Please select a date'); return;
+    }
+    if (!document.getElementById('apptTimeHiddenAdmin').value) {
+        e.preventDefault(); showToast('Please select a time slot'); return;
+    }
+});
+
+/* ═══════════════════════════════════════════════════
+   STAT COUNT-UP
+═══════════════════════════════════════════════════ */
+document.querySelectorAll('.stat-value').forEach(el => {
+    const target = parseInt(el.textContent, 10);
+    if (isNaN(target) || target === 0) return;
+    let current = 0;
+    const step  = Math.max(1, Math.ceil(target / 30));
+    const timer = setInterval(() => {
+        current = Math.min(current + step, target);
+        el.textContent = current;
+        if (current >= target) clearInterval(timer);
+    }, 30);
+});
+
+document.querySelectorAll('.badge-low').forEach(b => {
+    b.closest('tr').style.background = 'rgba(239,68,68,.04)';
+});
+
+/* ═══════════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════════ */
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+/* ═══════════════════════════════════════════════════
+   MEDICINE DUPLICATE CHECK
+═══════════════════════════════════════════════════ */
+let medCheckTimer = null;
+
+function scheduleMedCheck() {
+    clearTimeout(medCheckTimer);
+    medCheckTimer = setTimeout(runMedCheck, 400);
+}
+
+async function runMedCheck() {
+    const name   = document.getElementById('medName').value.trim();
+    const dosage = document.getElementById('medDosage').value.trim();
+    const form   = document.getElementById('medForm').value;
+    const banner = document.getElementById('medExistsBanner');
+    const btn    = document.getElementById('medSubmitBtn');
+
+    if (!name) { banner.style.display = 'none'; btn.textContent = '＋ Add Medicine'; return; }
+
+    const res  = await fetch(`/api/medicine_check?name=${encodeURIComponent(name)}&dosage=${encodeURIComponent(dosage)}&form=${encodeURIComponent(form)}`);
+    const data = await res.json();
+
+    if (data.found) {
+        document.getElementById('medExistsText').textContent =
+            `${data.Name} ${data.Dosage} ${data.Form} — Current Stock: ${data.Stock} units`;
+        banner.style.display = 'block';
+        btn.textContent = '＋ Add to Existing Stock';
+        btn.style.background = 'linear-gradient(135deg,#f59e0b,#d97706)';
+    } else {
+        banner.style.display = 'none';
+        btn.textContent = '＋ Add Medicine';
+        btn.style.background = '';
+    }
+}
+
+/* ── Adjust Stock — show current stock info ── */
+function updateAdjustStock() {
+    const sel     = document.getElementById('adjustMedSelect');
+    const opt     = sel.options[sel.selectedIndex];
+    const stock   = opt.dataset.stock;
+    const infoDiv = document.getElementById('adjustInfo');
+    if (stock !== undefined) {
+        document.getElementById('currentStockInfo').textContent = stock + ' units';
+        infoDiv.style.display = 'block';
+    }
+}
+
+/* ═══════════════════════════════════════════════════
+   ON LOAD — restore tab, toast
+═══════════════════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    const tab    = params.get('tab');
+    if (tab) {
+        const btn = [...document.querySelectorAll('.tab-btn')]
+            .find(b => b.getAttribute('onclick').includes(`'${tab}'`));
+        if (btn) switchTab(tab, btn);
+    }
+    if (params.get('msg')) showToast(decodeURIComponent(params.get('msg').replace(/\+/g,' ')));
+});
+</script>
+</body>
+</html>

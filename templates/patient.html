@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HMS — Patient Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --navy:        #0f1f3d;
+            --navy-mid:    #162847;
+            --teal:        #0ea5b0;
+            --teal-light:  #17c4d0;
+            --teal-glow:   rgba(14,165,176,.18);
+            --amber:       #f59e0b;
+            --amber-glow:  rgba(245,158,11,.15);
+            --indigo:      #818cf8;
+            --red:         #ef4444;
+            --green:       #10b981;
+            --white:       #ffffff;
+            --muted:       #8ba3c9;
+            --border:      rgba(255,255,255,.07);
+            --card-bg:     rgba(255,255,255,.04);
+            --radius-lg:   18px;
+            --shadow-teal: 0 0 20px rgba(14,165,176,.25);
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--navy); color: var(--white); min-height: 100vh;
+            background-image:
+                radial-gradient(ellipse 80% 50% at 20% -10%, rgba(14,165,176,.12) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 40% at 80% 110%, rgba(245,158,11,.07) 0%, transparent 55%);
+        }
+
+        .navbar {
+            position: sticky; top: 0; z-index: 100;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 2.5rem; height: 64px;
+            background: rgba(15,31,61,.92); backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border); box-shadow: 0 2px 20px rgba(0,0,0,.4);
+        }
+        .navbar-brand { display: flex; align-items: center; gap: .75rem; }
+        .logo-icon {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--teal), var(--teal-light));
+            border-radius: 10px; display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; box-shadow: var(--shadow-teal);
+        }
+        .brand-text {
+            font-size: 1.1rem; font-weight: 700; letter-spacing: .5px;
+            background: linear-gradient(90deg, var(--white), var(--teal-light));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .brand-sub { font-size: .68rem; color: var(--muted); display: block; margin-top: -2px; letter-spacing: .8px; }
+        .navbar-right { display: flex; align-items: center; gap: 1rem; }
+        .role-badge {
+            font-size: .72rem; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+            color: var(--amber); background: var(--amber-glow);
+            border: 1px solid rgba(245,158,11,.3); padding: .3rem .75rem; border-radius: 20px;
+        }
+        .logout-btn {
+            display: flex; align-items: center; gap: .4rem;
+            font-size: .875rem; font-weight: 600; color: var(--white);
+            background: rgba(239,68,68,.15); border: 1px solid rgba(239,68,68,.3);
+            padding: .45rem 1rem; border-radius: 8px; text-decoration: none; transition: all .2s ease;
+        }
+        .logout-btn:hover { background: rgba(239,68,68,.3); border-color: rgba(239,68,68,.6); transform: translateY(-1px); }
+
+        .page { max-width: 1140px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+        .page-header { margin-bottom: 2rem; }
+        .page-header h1 {
+            font-size: 1.75rem; font-weight: 700;
+            background: linear-gradient(90deg, var(--white) 0%, var(--teal-light) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .page-header p { color: var(--muted); font-size: .9rem; margin-top: .3rem; }
+
+        .summary-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem; margin-bottom: 2.5rem;
+        }
+        .summary-card {
+            background: var(--card-bg); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); padding: 1.25rem 1.4rem;
+            position: relative; overflow: hidden;
+            transition: transform .2s, box-shadow .2s; animation: fadeUp .5s ease both;
+        }
+        .summary-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-teal); }
+        .summary-card::before {
+            content: ''; position: absolute; top: 0; left: 0;
+            width: 4px; height: 100%; background: var(--accent, var(--teal));
+        }
+        .sc-icon { font-size: 1.3rem; margin-bottom: .5rem; }
+        .sc-label { font-size: .7rem; font-weight: 600; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin-bottom: .3rem; }
+        .sc-value { font-size: 1.6rem; font-weight: 700; font-family: 'DM Mono', monospace; color: var(--accent, var(--teal-light)); }
+
+        .section { margin-bottom: 2.75rem; animation: fadeUp .5s ease both; }
+        .section-header {
+            display: flex; align-items: center; gap: .75rem;
+            margin-bottom: 1.1rem; padding-bottom: .85rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .section-icon {
+            width: 32px; height: 32px; background: var(--teal-glow);
+            border: 1px solid rgba(14,165,176,.25); border-radius: 8px;
+            display: flex; align-items: center; justify-content: center; font-size: .9rem;
+        }
+        .section-header h2 { font-size: 1.05rem; font-weight: 700; letter-spacing: .3px; }
+
+        .table-wrapper {
+            background: var(--card-bg); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); overflow: hidden; overflow-x: auto;
+        }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        thead tr { background: rgba(14,165,176,.1); border-bottom: 1px solid var(--border); }
+        thead th {
+            padding: .8rem 1.1rem; text-align: left;
+            font-size: .72rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: .8px; color: var(--teal-light); white-space: nowrap;
+        }
+        tbody tr { border-bottom: 1px solid var(--border); transition: background .15s; }
+        tbody tr:last-child { border-bottom: none; }
+        tbody tr:hover { background: rgba(14,165,176,.05); }
+        tbody td { padding: .85rem 1.1rem; font-size: .875rem; color: rgba(255,255,255,.85); }
+        .empty-row td { text-align: center; color: var(--muted); padding: 2.5rem; }
+        .id-cell { font-family: 'DM Mono', monospace; color: var(--teal-light); font-size: .8rem; }
+
+        .badge {
+            display: inline-flex; align-items: center; gap: .3rem;
+            padding: .22rem .65rem; border-radius: 20px;
+            font-size: .72rem; font-weight: 600; letter-spacing: .3px; white-space: nowrap;
+        }
+        .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+        .badge-pending   { background: rgba(245,158,11,.18); color: #fcd34d; border: 1px solid rgba(245,158,11,.3); }
+        .badge-paid      { background: rgba(16,185,129,.18); color: #6ee7b7; border: 1px solid rgba(16,185,129,.3); }
+        .badge-completed { background: rgba(16,185,129,.15); color: #6ee7b7; border: 1px solid rgba(16,185,129,.3); }
+        .badge-upcoming  { background: rgba(129,140,248,.15); color: #c4b5fd; border: 1px solid rgba(129,140,248,.3); }
+        .badge-today     { background: rgba(14,165,176,.18); color: var(--teal-light); border: 1px solid rgba(14,165,176,.3); }
+
+        .rx-pill {
+            display: inline-block; padding: .15rem .5rem; border-radius: 8px;
+            font-size: .7rem; font-weight: 500; margin: .1rem .1rem 0 0;
+            background: rgba(129,140,248,.1); color: #c4b5fd; border: 1px solid rgba(129,140,248,.2);
+        }
+        .rx-pill-food { background: rgba(16,185,129,.1); color: #6ee7b7; border-color: rgba(16,185,129,.2); }
+        .amount-cell { font-family: 'DM Mono', monospace; font-weight: 600; }
+
+        /* ── BOOKING FORM ── */
+        .form-card {
+            background: var(--card-bg); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); padding: 1.5rem;
+        }
+        .booking-steps {
+            display: flex; align-items: center; gap: .5rem;
+            margin-bottom: 1.25rem; flex-wrap: wrap;
+        }
+        .step {
+            display: flex; align-items: center; gap: .35rem;
+            padding: .3rem .75rem; border-radius: 20px;
+            font-size: .75rem; font-weight: 600;
+            background: rgba(255,255,255,.04); border: 1px solid var(--border);
+            color: var(--muted); transition: all .25s;
+        }
+        .step.active { background: var(--teal-glow); border-color: rgba(14,165,176,.4); color: var(--teal-light); }
+        .step.done   { background: rgba(16,185,129,.1); border-color: rgba(16,185,129,.3); color: #6ee7b7; }
+        .step-arrow  { color: rgba(255,255,255,.2); font-size: .8rem; }
+
+        .form-grid { display: flex; flex-wrap: wrap; gap: .75rem; align-items: flex-end; }
+        .form-field { display: flex; flex-direction: column; gap: .35rem; min-width: 160px; flex: 1; }
+        .form-field label { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .7px; color: var(--muted); }
+        .form-field input, .form-field select {
+            background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);
+            color: var(--white); padding: .65rem .9rem; border-radius: 8px;
+            font-size: .875rem; font-family: 'DM Sans', sans-serif;
+            transition: border-color .2s, box-shadow .2s; outline: none;
+        }
+        .form-field input::placeholder { color: rgba(255,255,255,.22); }
+        .form-field input:focus, .form-field select:focus {
+            border-color: var(--teal); box-shadow: 0 0 0 3px rgba(14,165,176,.15);
+            background: rgba(14,165,176,.06);
+        }
+        .form-field select option { background: #1a2f55; }
+        .form-field input:disabled, .form-field select:disabled { opacity: .35; cursor: not-allowed; }
+        .form-field input[type="date"] { color-scheme: dark; }
+
+        /* ── AVAILABILITY INFO BOX ── */
+        .avail-box {
+            margin-top: 1rem; padding: .85rem 1rem;
+            border-radius: 10px; font-size: .82rem; line-height: 1.6;
+            display: none;
+        }
+        .avail-box.show { display: block; }
+        .avail-box.info {
+            background: rgba(14,165,176,.08); border: 1px solid rgba(14,165,176,.2); color: rgba(255,255,255,.8);
+        }
+        .avail-box.warn {
+            background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.25); color: #fcd34d;
+        }
+        .avail-box.error {
+            background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.25); color: #fca5a5;
+        }
+        .avail-box strong { color: var(--teal-light); }
+        .avail-box.warn strong { color: var(--amber); }
+        .avail-box.error strong { color: #f87171; }
+
+        /* ── TIME SLOTS GRID ── */
+        .slots-label { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .7px; color: var(--muted); margin-bottom: .5rem; margin-top: 1rem; }
+        .slots-grid {
+            display: flex; flex-wrap: wrap; gap: .45rem; margin-bottom: .75rem;
+        }
+        .slot-btn {
+            padding: .4rem .85rem; border-radius: 8px; border: 1px solid rgba(255,255,255,.12);
+            background: rgba(255,255,255,.05); color: rgba(255,255,255,.75);
+            font-size: .8rem; font-weight: 500; font-family: 'DM Sans', sans-serif;
+            cursor: pointer; transition: all .15s;
+        }
+        .slot-btn:hover:not(.booked):not(.selected) {
+            background: var(--teal-glow); border-color: rgba(14,165,176,.4); color: var(--white);
+        }
+        .slot-btn.selected {
+            background: linear-gradient(135deg, var(--teal), #0891a0);
+            border-color: var(--teal); color: var(--white); font-weight: 700;
+            box-shadow: 0 2px 10px rgba(14,165,176,.4);
+        }
+        .slot-btn.booked {
+            background: rgba(239,68,68,.08); border-color: rgba(239,68,68,.2);
+            color: rgba(239,68,68,.5); cursor: not-allowed; text-decoration: line-through;
+        }
+
+        /* ── DOCTOR SCHEDULE BADGE ── */
+        .doc-schedule {
+            display: inline-flex; align-items: center; gap: .4rem;
+            font-size: .75rem; color: var(--muted);
+            background: rgba(255,255,255,.04); border: 1px solid var(--border);
+            padding: .3rem .7rem; border-radius: 8px; margin-top: .35rem;
+        }
+
+        .btn-pay {
+            display: inline-flex; align-items: center; gap: .45rem;
+            padding: .7rem 1.6rem; border: none; border-radius: 8px;
+            font-size: .9rem; font-weight: 700; font-family: 'DM Sans', sans-serif;
+            cursor: pointer; transition: all .2s;
+            background: linear-gradient(135deg, var(--amber), #d97706);
+            color: var(--navy); box-shadow: 0 4px 14px rgba(245,158,11,.35); white-space: nowrap;
+        }
+        .btn-pay:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(245,158,11,.5); }
+
+        .btn-book {
+            display: inline-flex; align-items: center; gap: .45rem;
+            padding: .7rem 1.6rem; border: none; border-radius: 8px;
+            font-size: .9rem; font-weight: 700; font-family: 'DM Sans', sans-serif;
+            cursor: pointer; transition: all .2s;
+            background: linear-gradient(135deg, var(--teal), #0891a0);
+            color: var(--white); box-shadow: 0 4px 14px rgba(14,165,176,.35); white-space: nowrap;
+        }
+        .btn-book:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(14,165,176,.5); }
+        .btn-book:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        .tip-box {
+            margin-top: .85rem; font-size: .78rem; color: var(--muted);
+            background: rgba(14,165,176,.06); border: 1px solid rgba(14,165,176,.12);
+            border-radius: 8px; padding: .6rem .9rem;
+        }
+
+        .divider { height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin: 2rem 0; }
+
+        #toast {
+            position: fixed; bottom: 1.5rem; right: 1.5rem;
+            background: var(--navy-mid); border: 1px solid var(--teal);
+            color: var(--white); padding: .75rem 1.25rem; border-radius: 10px;
+            font-size: .875rem; font-weight: 500; box-shadow: var(--shadow-teal);
+            transform: translateY(80px); opacity: 0;
+            transition: all .3s cubic-bezier(.34,1.56,.64,1); z-index: 999;
+            max-width: 380px;
+        }
+        #toast.show { transform: translateY(0); opacity: 1; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .summary-grid .summary-card:nth-child(1) { animation-delay: .04s; }
+        .summary-grid .summary-card:nth-child(2) { animation-delay: .09s; }
+        .summary-grid .summary-card:nth-child(3) { animation-delay: .14s; }
+        .summary-grid .summary-card:nth-child(4) { animation-delay: .19s; }
+
+        @media(max-width: 768px) {
+            .navbar { padding: 0 1.2rem; }
+            .page { padding: 1.5rem 1rem 3rem; }
+            .form-grid { flex-direction: column; }
+            .form-field { min-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="navbar-brand">
+        <div class="logo-icon">🏥</div>
+        <div>
+            <span class="brand-text">HMS</span>
+            <span class="brand-sub">Hospital Management System</span>
+        </div>
+    </div>
+    <div class="navbar-right">
+        <span class="role-badge">Patient</span>
+        <a href="/logout" class="logout-btn">⏻ Logout</a>
+    </div>
+</nav>
+
+<div class="page">
+
+    <div class="page-header">
+        <h1>Patient Dashboard</h1>
+        <p>Book appointments, view your records, prescriptions, bills and make payments.</p>
+    </div>
+
+    <div class="summary-grid">
+        <div class="summary-card" style="--accent:#0ea5b0;">
+            <div class="sc-icon">📅</div>
+            <div class="sc-label">My Appointments</div>
+            <div class="sc-value">{{ my_appointments | length }}</div>
+        </div>
+        <div class="summary-card" style="--accent:#10b981;">
+            <div class="sc-icon">📋</div>
+            <div class="sc-label">Medical Records</div>
+            <div class="sc-value">{{ records | length }}</div>
+        </div>
+        <div class="summary-card" style="--accent:#818cf8;">
+            <div class="sc-icon">💊</div>
+            <div class="sc-label">Prescriptions</div>
+            <div class="sc-value">{{ prescriptions | length }}</div>
+        </div>
+        <div class="summary-card" style="--accent:#f59e0b;">
+            <div class="sc-icon">💳</div>
+            <div class="sc-label">Pending Bills</div>
+            <div class="sc-value">{{ bills | selectattr('Status','equalto','Pending') | list | length }}</div>
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ── BOOK APPOINTMENT ── -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-icon">📅</div>
+            <h2>Book an Appointment</h2>
+        </div>
+        <div class="form-card">
+            <div class="booking-steps">
+                <div class="step active" id="step1">① Choose Department</div>
+                <span class="step-arrow">→</span>
+                <div class="step" id="step2">② Select Doctor</div>
+                <span class="step-arrow">→</span>
+                <div class="step" id="step3">③ Pick Date</div>
+                <span class="step-arrow">→</span>
+                <div class="step" id="step4">④ Choose Time Slot</div>
+            </div>
+
+            <form action="/book_appointment" method="POST" id="bookForm">
+                <div class="form-grid">
+                    <!-- Department -->
+                    <div class="form-field">
+                        <label>Department</label>
+                        <select id="deptSelect" onchange="onDeptChange(this)">
+                            <option value="" disabled selected>Select a department</option>
+                        </select>
+                    </div>
+
+                    <!-- Doctor -->
+                    <div class="form-field">
+                        <label>Doctor</label>
+                        <select name="DoctorID" id="doctorSelect" required disabled onchange="onDoctorChange(this)">
+                            <option value="" disabled selected>Select department first</option>
+                        </select>
+                    </div>
+
+                    <!-- Date -->
+                    <div class="form-field" style="max-width:210px;">
+                        <label>Date</label>
+                        <input type="date" name="Date" id="apptDate"
+                               min="{{ today.isoformat() }}" disabled
+                               onchange="onDateChange(this)">
+                    </div>
+
+                    <!-- Hidden time input submitted with form -->
+                    <input type="hidden" name="Time" id="apptTimeHidden">
+                </div>
+
+                <!-- Availability info box -->
+                <div class="avail-box info" id="availBox"></div>
+
+                <!-- Time slots -->
+                <div id="slotsSection" style="display:none;">
+                    <div class="slots-label">Available Time Slots — select one</div>
+                    <div class="slots-grid" id="slotsGrid"></div>
+                </div>
+
+                <div style="margin-top:1rem;">
+                    <button type="submit" class="btn-book" id="bookBtn" disabled>📌 Book Appointment</button>
+                </div>
+            </form>
+
+            <div class="tip-box">
+                💡 Only dates when the doctor is available will be selectable. Booked slots are shown in red and cannot be chosen.
+            </div>
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ── MY APPOINTMENTS ── -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-icon">🗓️</div>
+            <h2>My Appointments</h2>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr><th>Doctor</th><th>Specialization</th><th>Date</th><th>Time</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                    {% for a in my_appointments %}
+                    <tr>
+                        <td>{{ a.DoctorName }}</td>
+                        <td style="color:var(--muted);">{{ a.Specialization }}</td>
+                        <td>{{ a.Date }}</td>
+                        <td>{{ a.Time }}</td>
+                        <td>
+                            {% if a.Status == 'Completed' %}
+                                <span class="badge badge-completed"><span class="badge-dot"></span>Completed</span>
+                            {% elif a.Date == today %}
+                                <span class="badge badge-today"><span class="badge-dot"></span>Today</span>
+                            {% else %}
+                                <span class="badge badge-upcoming"><span class="badge-dot"></span>Upcoming</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr class="empty-row"><td colspan="5">No appointments yet. Book one above!</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ── BILLS ── -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-icon">💳</div>
+            <h2>My Bills</h2>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead><tr><th>Bill ID</th><th>Doctor Fee</th><th>Hospital Fee</th><th>Medicine Fee</th><th>Total</th><th>Status</th><th>Action</th></tr></thead>
+                <tbody>
+                    {% for b in bills %}
+                    <tr>
+                        <td class="id-cell">{{ b.BillID }}</td>
+                        <td>₹{{ "%.2f"|format(b.DoctorFee or 0) }}</td>
+                        <td>₹{{ "%.2f"|format(b.HospitalFee or 0) }}</td>
+                        <td>₹{{ "%.2f"|format(b.MedicineFee or 0) }}</td>
+                        <td class="amount-cell">₹{{ "%.2f"|format(b.TotalAmount or 0) }}</td>
+                        <td>
+                            {% if b.Status == 'Paid' %}
+                                <span class="badge badge-paid"><span class="badge-dot"></span>Paid</span>
+                            {% else %}
+                                <span class="badge badge-pending"><span class="badge-dot"></span>Pending</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if b.Status != 'Paid' %}
+                            <form action="/pay" method="POST" style="display:inline;">
+                                <input type="hidden" name="BillID" value="{{ b.BillID }}">
+                                <input type="hidden" name="Amount" value="{{ b.TotalAmount }}">
+                                <button type="submit" class="btn-pay" style="padding:.35rem .9rem;font-size:.8rem;"
+                                        onclick="return confirm('Pay ₹{{ '%.2f'|format(b.TotalAmount) }} online for Bill #{{ b.BillID }}?')">
+                                    💳 Pay Online
+                                </button>
+                            </form>
+                            {% else %}
+                                <span style="color:#6ee7b7;font-size:.8rem;">✓ Paid</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr class="empty-row"><td colspan="7">No bills found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ── MEDICAL RECORDS ── -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-icon">📝</div>
+            <h2>Medical Records</h2>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead><tr><th>Record ID</th><th>Diagnosis</th><th>Treatment</th><th>Doctor</th></tr></thead>
+                <tbody>
+                    {% for r in records %}
+                    <tr>
+                        <td class="id-cell">{{ r.RecordID }}</td>
+                        <td>{{ r.Diagnosis }}</td>
+                        <td>{{ r.Treatment }}</td>
+                        <td>{{ r.DoctorName }}</td>
+                    </tr>
+                    {% else %}
+                    <tr class="empty-row"><td colspan="4">No medical records found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ── PRESCRIPTIONS ── -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-icon">💊</div>
+            <h2>Prescriptions</h2>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr><th>Medicine</th><th>Qty</th><th>Frequency</th><th>Timing</th><th>Food</th><th>Doctor</th></tr>
+                </thead>
+                <tbody>
+                    {% for p in prescriptions %}
+                    <tr>
+                        <td><strong>{{ p.MedicineName }}</strong></td>
+                        <td><span style="font-family:'DM Mono',monospace;color:var(--teal-light);">{{ p.Quantity }}</span> <span style="font-size:.75rem;color:var(--muted);">units</span></td>
+                        <td>{% if p.Frequency %}<span class="rx-pill">{{ p.Frequency }}</span>{% else %}<span style="color:var(--muted);">—</span>{% endif %}</td>
+                        <td>{% if p.TimingPattern %}<span class="rx-pill">{{ p.TimingPattern }}</span>{% else %}<span style="color:var(--muted);">—</span>{% endif %}</td>
+                        <td>{% if p.FoodInstruction %}<span class="rx-pill rx-pill-food">{{ p.FoodInstruction }}</span>{% else %}<span style="color:var(--muted);">—</span>{% endif %}</td>
+                        <td>{{ p.DoctorName }}</td>
+                    </tr>
+                    {% else %}
+                    <tr class="empty-row"><td colspan="6">No prescriptions found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ── Doctors data from Flask ── */
+const ALL_DOCTORS = [
+    {% for d in doctors %}
+    {
+        id: {{ d.DoctorID }},
+        name: "{{ d.Name | e }}",
+        specialization: "{{ d.Specialization | e }}",
+        availableDays: "{{ d.AvailableDays or '' }}",
+        startTime: "{{ d.StartTime or '' }}",
+        endTime:   "{{ d.EndTime or '' }}"
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+];
+
+const TODAY_STR = "{{ today.isoformat() }}";
+const DEPARTMENTS = [...new Set(ALL_DOCTORS.map(d => d.specialization))].sort();
+
+let currentAvail = null; // holds the availability object for selected doctor
+
+/* ── Build department dropdown ── */
+window.addEventListener('DOMContentLoaded', () => {
+    const deptSel = document.getElementById('deptSelect');
+    DEPARTMENTS.forEach(dept => {
+        const opt = document.createElement('option');
+        opt.value = dept; opt.textContent = dept;
+        deptSel.appendChild(opt);
+    });
+});
+
+/* ── Step 1: Department chosen ── */
+function onDeptChange(sel) {
+    const dept   = sel.value;
+    const docSel = document.getElementById('doctorSelect');
+
+    docSel.innerHTML = '<option value="" disabled selected>Select a doctor</option>';
+    docSel.disabled  = false;
+
+    resetDateAndSlots();
+    hideAvailBox();
+    setStep(2);
+
+    ALL_DOCTORS.filter(d => d.specialization === dept).forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d.id;
+        opt.textContent = d.name;
+        docSel.appendChild(opt);
+    });
+}
+
+/* ── Step 2: Doctor chosen — fetch availability ── */
+function onDoctorChange(sel) {
+    const doctorId = sel.value;
+    if (!doctorId) return;
+
+    resetDateAndSlots();
+    hideAvailBox();
+    setStep(3);
+
+    // Show loading
+    showAvailBox('info', '⏳ Loading doctor availability…');
+
+    fetch(`/api/doctor_availability/${doctorId}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) {
+                showAvailBox('error', `⚠️ <strong>Not configured:</strong> ${data.error}`);
+                return;
+            }
+
+            currentAvail = data;
+
+            // Enable date input with constraints
+            const dateInput = document.getElementById('apptDate');
+            dateInput.disabled = false;
+            dateInput.value = '';
+
+            // Show doctor schedule info
+            const daysStr = data.available_days.join(', ');
+            showAvailBox('info',
+                `🩺 <strong>Available Days:</strong> ${daysStr}<br>` +
+                `🕐 <strong>Hours:</strong> ${data.start_time} – ${data.end_time}<br>` +
+                (data.next_available
+                    ? `📅 <strong>Next available date:</strong> ${formatDate(data.next_available)}`
+                    : `❌ No available dates in the next 90 days.`)
+            );
+        })
+        .catch(() => showAvailBox('error', '❌ Could not load availability. Please try again.'));
+}
+
+/* ── Step 3: Date chosen — show time slots ── */
+function onDateChange(input) {
+    const dateVal = input.value;
+    if (!dateVal || !currentAvail) return;
+
+    // Clear previous slot selection
+    document.getElementById('apptTimeHidden').value = '';
+    document.getElementById('bookBtn').disabled = true;
+    document.getElementById('slotsSection').style.display = 'none';
+    setStep(4);
+
+    // Check if chosen day is valid
+    const chosenDate = new Date(dateVal + 'T00:00:00');
+    const dayName    = chosenDate.toLocaleDateString('en-US', { weekday: 'long' });
+
+    if (!currentAvail.available_days.includes(dayName)) {
+        const availDays = currentAvail.available_days.join(', ');
+        showAvailBox('error',
+            `❌ <strong>Doctor is not available on ${dayName}s.</strong><br>` +
+            `Available days: ${availDays}<br>` +
+            (currentAvail.next_available
+                ? `📅 Next available: <strong>${formatDate(currentAvail.next_available)}</strong>`
+                : '')
+        );
+        return;
+    }
+
+    // Check if fully booked
+    const bookedOnDay = currentAvail.booked_slots[dateVal] || [];
+    const allSlots    = currentAvail.all_slots;
+
+    if (currentAvail.fully_booked_dates.includes(dateVal)) {
+        // Find next available date
+        const nextAfter = findNextAvailableAfter(dateVal);
+        showAvailBox('warn',
+            `📵 <strong>Fully booked on ${formatDate(dateVal)}.</strong> All ${allSlots.length} slots are taken.<br>` +
+            (nextAfter
+                ? `📅 Next available date: <strong>${formatDate(nextAfter)}</strong>`
+                : `No available dates in the next 90 days.`)
+        );
+        return;
+    }
+
+    // Show slots
+    showAvailBox('info',
+        `✅ <strong>${dayName}, ${formatDate(dateVal)}</strong> — Doctor is available.<br>` +
+        `Hours: ${currentAvail.start_time} – ${currentAvail.end_time} &nbsp;|&nbsp; ` +
+        `${allSlots.length - bookedOnDay.length} of ${allSlots.length} slots free.`
+    );
+
+    renderSlots(allSlots, bookedOnDay, dateVal);
+}
+
+/* ── Render time slot buttons ── */
+function renderSlots(allSlots, bookedSlots, dateVal) {
+    const grid    = document.getElementById('slotsGrid');
+    const section = document.getElementById('slotsSection');
+    grid.innerHTML = '';
+
+    allSlots.forEach(slot => {
+        const isBooked = bookedSlots.includes(slot);
+        const btn = document.createElement('button');
+        btn.type      = 'button';
+        btn.className = 'slot-btn' + (isBooked ? ' booked' : '');
+        btn.textContent = slot + (isBooked ? ' ✗' : '');
+        btn.title = isBooked ? 'This slot is already booked' : `Book at ${slot}`;
+
+        if (!isBooked) {
+            btn.onclick = function() {
+                // Deselect all
+                document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                document.getElementById('apptTimeHidden').value = slot;
+                document.getElementById('bookBtn').disabled = false;
+                setStep(4, true);
+            };
+        }
+        grid.appendChild(btn);
+    });
+
+    section.style.display = 'block';
+}
+
+/* ── Helpers ── */
+function findNextAvailableAfter(fromDate) {
+    if (!currentAvail) return null;
+    const avail = currentAvail;
+    let check = new Date(fromDate + 'T00:00:00');
+    check.setDate(check.getDate() + 1);
+    for (let i = 0; i < 90; i++) {
+        const dayName = check.toLocaleDateString('en-US', { weekday: 'long' });
+        const dStr    = check.toISOString().split('T')[0];
+        if (avail.available_days.includes(dayName) && !avail.fully_booked_dates.includes(dStr)) {
+            return dStr;
+        }
+        check.setDate(check.getDate() + 1);
+    }
+    return null;
+}
+
+function formatDate(isoStr) {
+    const d = new Date(isoStr + 'T00:00:00');
+    return d.toLocaleDateString('en-IN', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function showAvailBox(type, html) {
+    const box = document.getElementById('availBox');
+    box.className = `avail-box show ${type}`;
+    box.innerHTML = html;
+}
+
+function hideAvailBox() {
+    document.getElementById('availBox').className = 'avail-box';
+    document.getElementById('availBox').innerHTML = '';
+}
+
+function resetDateAndSlots() {
+    const dateInput = document.getElementById('apptDate');
+    dateInput.disabled = true;
+    dateInput.value = '';
+    document.getElementById('apptTimeHidden').value = '';
+    document.getElementById('bookBtn').disabled = true;
+    document.getElementById('slotsSection').style.display = 'none';
+    document.getElementById('slotsGrid').innerHTML = '';
+    currentAvail = null;
+}
+
+function setStep(active, done4 = false) {
+    for (let i = 1; i <= 4; i++) {
+        const el = document.getElementById(`step${i}`);
+        if (i < active)       el.className = 'step done';
+        else if (i === active) el.className = 'step active';
+        else                   el.className = 'step';
+    }
+    if (done4) document.getElementById('step4').className = 'step done';
+}
+
+/* ── Book form submit validation ── */
+document.getElementById('bookForm').addEventListener('submit', function(e) {
+    if (!document.getElementById('doctorSelect').value) {
+        e.preventDefault(); showToast('Please select a doctor', 'warn'); return;
+    }
+    if (!document.getElementById('apptDate').value) {
+        e.preventDefault(); showToast('Please select a date', 'warn'); return;
+    }
+    if (!document.getElementById('apptTimeHidden').value) {
+        e.preventDefault(); showToast('Please select a time slot', 'warn'); return;
+    }
+    const btn = document.getElementById('bookBtn');
+    btn.disabled = true;
+    btn.innerHTML = '⏳ Booking…';
+});
+
+/* ── Toast ── */
+function showToast(msg, type) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.borderColor = type === 'warn' ? 'var(--amber)' : type === 'error' ? 'var(--red)' : 'var(--teal)';
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 4000);
+}
+
+const params = new URLSearchParams(window.location.search);
+if (params.get('msg')) {
+    const m = decodeURIComponent(params.get('msg').replace(/\+/g, ' '));
+    const type = /invalid|not found|booked|not available|fully/i.test(m) ? 'warn' : 'success';
+    showToast(m, type);
+}
+
+/* Count-up animation */
+document.querySelectorAll('.sc-value').forEach(el => {
+    const target = parseInt(el.textContent, 10);
+    if (isNaN(target) || target === 0) return;
+    let current = 0;
+    const step = Math.max(1, Math.ceil(target / 20));
+    const timer = setInterval(() => {
+        current = Math.min(current + step, target);
+        el.textContent = current;
+        if (current >= target) clearInterval(timer);
+    }, 40);
+});
+
+/* Highlight pending bill rows */
+document.querySelectorAll('.badge-pending').forEach(b => {
+    b.closest('tr').style.background = 'rgba(245,158,11,.03)';
+});
+</script>
+</body>
+</html>

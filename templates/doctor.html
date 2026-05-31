@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HMS — Doctor Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --navy:        #0f1f3d;
+            --navy-mid:    #162847;
+            --teal:        #0ea5b0;
+            --teal-light:  #17c4d0;
+            --teal-glow:   rgba(14,165,176,.18);
+            --indigo:      #818cf8;
+            --indigo-glow: rgba(129,140,248,.15);
+            --amber:       #f59e0b;
+            --red:         #ef4444;
+            --green:       #10b981;
+            --white:       #ffffff;
+            --muted:       #8ba3c9;
+            --border:      rgba(255,255,255,.07);
+            --card-bg:     rgba(255,255,255,.04);
+            --radius-lg:   18px;
+            --shadow-teal: 0 0 20px rgba(14,165,176,.25);
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--navy); color: var(--white); min-height: 100vh;
+            background-image:
+                radial-gradient(ellipse 80% 50% at 20% -10%, rgba(14,165,176,.12) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 40% at 80% 110%, rgba(129,140,248,.08) 0%, transparent 55%);
+        }
+
+        .navbar {
+            position: sticky; top: 0; z-index: 100;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 2.5rem; height: 64px;
+            background: rgba(15,31,61,.92); backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border); box-shadow: 0 2px 20px rgba(0,0,0,.4);
+        }
+        .navbar-brand { display: flex; align-items: center; gap: .75rem; }
+        .logo-icon {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--teal), var(--teal-light));
+            border-radius: 10px; display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; box-shadow: var(--shadow-teal);
+        }
+        .brand-text {
+            font-size: 1.1rem; font-weight: 700; letter-spacing: .5px;
+            background: linear-gradient(90deg, var(--white), var(--teal-light));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .brand-sub { font-size: .68rem; color: var(--muted); display: block; margin-top: -2px; letter-spacing: .8px; }
+        .navbar-right { display: flex; align-items: center; gap: 1rem; }
+        .role-badge {
+            font-size: .72rem; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+            color: var(--indigo); background: var(--indigo-glow);
+            border: 1px solid rgba(129,140,248,.3); padding: .3rem .75rem; border-radius: 20px;
+        }
+        .logout-btn {
+            display: flex; align-items: center; gap: .4rem;
+            font-size: .875rem; font-weight: 600; color: var(--white);
+            background: rgba(239,68,68,.15); border: 1px solid rgba(239,68,68,.3);
+            padding: .45rem 1rem; border-radius: 8px; text-decoration: none; transition: all .2s ease;
+        }
+        .logout-btn:hover { background: rgba(239,68,68,.3); border-color: rgba(239,68,68,.6); transform: translateY(-1px); }
+
+        .page { max-width: 1140px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+        .page-header { margin-bottom: 2rem; }
+        .page-header h1 {
+            font-size: 1.75rem; font-weight: 700;
+            background: linear-gradient(90deg, var(--white) 0%, var(--teal-light) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .page-header p { color: var(--muted); font-size: .9rem; margin-top: .3rem; }
+
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem; margin-bottom: 2.5rem;
+        }
+        .stat-card {
+            background: var(--card-bg); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); padding: 1.25rem 1.4rem;
+            position: relative; overflow: hidden;
+            transition: transform .2s, box-shadow .2s; animation: fadeUp .5s ease both;
+        }
+        .stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-teal); }
+        .stat-card::before {
+            content: ''; position: absolute; top: 0; left: 0;
+            width: 4px; height: 100%; background: var(--accent, var(--teal));
+        }
+        .sc-icon { font-size: 1.3rem; margin-bottom: .5rem; }
+        .sc-label { font-size: .7rem; font-weight: 600; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin-bottom: .3rem; }
+        .sc-value { font-size: 1.6rem; font-weight: 700; font-family: 'DM Mono', monospace; color: var(--accent, var(--teal-light)); }
+
+        .section { margin-bottom: 3rem; animation: fadeUp .5s ease both; }
+        .section-header {
+            display: flex; align-items: center; gap: .75rem;
+            margin-bottom: 1.25rem; padding-bottom: .85rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .section-icon {
+            width: 32px; height: 32px; background: var(--teal-glow);
+            border: 1px solid rgba(14,165,176,.25); border-radius: 8px;
+            display: flex; align-items: center; justify-content: center; font-size: .9rem;
+        }
+        .section-header h2 { font-size: 1.1rem; font-weight: 700; letter-spacing: .3px; }
+
+        .table-wrapper {
+            background: var(--card-bg); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); overflow: hidden;
+        }
+        table { width: 100%; border-collapse: collapse; }
+        thead tr { background: rgba(14,165,176,.1); border-bottom: 1px solid var(--border); }
+        thead th {
+            padding: .85rem 1.1rem; text-align: left;
+            font-size: .72rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: .8px; color: var(--teal-light);
+        }
+        tbody tr { border-bottom: 1px solid var(--border); transition: background .15s; }
+        tbody tr:last-child { border-bottom: none; }
+        tbody tr:hover { background: rgba(14,165,176,.05); }
+        tbody td { padding: .85rem 1.1rem; font-size: .875rem; color: rgba(255,255,255,.85); }
+        .empty-row td { text-align: center; color: var(--muted); padding: 2.5rem; font-size: .875rem; }
+        .id-cell { font-family: 'DM Mono', monospace; color: var(--teal-light); font-size: .8rem; }
+        .today-badge {
+            display: inline-block; padding: .15rem .55rem; border-radius: 12px;
+            font-size: .7rem; font-weight: 600;
+            background: rgba(16,185,129,.2); color: #6ee7b7;
+            border: 1px solid rgba(16,185,129,.3); margin-left: .5rem;
+        }
+        .appt-use-btn {
+            display: inline-flex; align-items: center; gap: .3rem;
+            padding: .3rem .75rem; border-radius: 7px; font-size: .75rem; font-weight: 600;
+            background: rgba(14,165,176,.15); border: 1px solid rgba(14,165,176,.3);
+            color: var(--teal-light); cursor: pointer; transition: all .2s; white-space: nowrap;
+        }
+        .appt-use-btn:hover { background: rgba(14,165,176,.3); border-color: var(--teal); }
+
+        .form-card {
+            background: var(--card-bg); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); padding: 1.75rem;
+        }
+
+        .patient-row { display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+        .patient-select-wrap { display: flex; flex-direction: column; gap: .35rem; min-width: 260px; flex: 1; }
+        .patient-select-wrap label { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .7px; color: var(--muted); }
+        .patient-select {
+            background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);
+            color: var(--white); padding: .65rem .9rem; border-radius: 8px;
+            font-size: .9rem; font-family: 'DM Sans', sans-serif;
+            transition: border-color .2s, box-shadow .2s; outline: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238ba3c9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right .9rem center; padding-right: 2rem;
+        }
+        .patient-select:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(14,165,176,.15); background-color: rgba(14,165,176,.06); }
+        .patient-select option { background: #1a2f55; color: var(--white); }
+        .patient-confirm {
+            display: flex; align-items: center; gap: .5rem;
+            padding: .65rem 1rem; border-radius: 8px;
+            font-size: .875rem; font-weight: 600; margin-top: 1.55rem;
+            background: rgba(255,255,255,.04); border: 1px solid var(--border);
+            color: var(--muted); min-width: 200px; transition: all .2s;
+        }
+        .patient-confirm.valid { background: rgba(16,185,129,.1); border-color: rgba(16,185,129,.3); color: #6ee7b7; }
+        .no-appts-notice {
+            background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.25);
+            border-radius: 10px; padding: .85rem 1.1rem; font-size: .875rem;
+            color: #fcd34d; display: flex; align-items: center; gap: .6rem; margin-bottom: 1.25rem;
+        }
+
+        .diag-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem; }
+        .form-field { display: flex; flex-direction: column; gap: .35rem; }
+        .form-field label { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .7px; color: var(--muted); }
+        .form-field textarea {
+            background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);
+            color: var(--white); padding: .65rem .9rem; border-radius: 8px;
+            font-size: .875rem; font-family: 'DM Sans', sans-serif;
+            transition: border-color .2s, box-shadow .2s; outline: none;
+            resize: vertical; min-height: 90px;
+        }
+        .form-field textarea::placeholder { color: rgba(255,255,255,.22); }
+        .form-field textarea:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(14,165,176,.15); background: rgba(14,165,176,.06); }
+
+        /* ── PRESCRIPTION BLOCK ── */
+        .rx-block {
+            background: rgba(129,140,248,.05); border: 1px solid rgba(129,140,248,.18);
+            border-radius: 14px; padding: 1.25rem 1.25rem 1rem; margin-top: .5rem;
+        }
+        .rx-block-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+        .rx-title {
+            font-size: .8rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: .8px; color: var(--indigo);
+            display: flex; align-items: center; gap: .5rem;
+        }
+        .rx-optional {
+            font-size: .72rem; color: var(--muted); font-weight: 400;
+            background: rgba(255,255,255,.05); border: 1px solid var(--border);
+            padding: .2rem .6rem; border-radius: 10px; letter-spacing: 0; text-transform: none;
+        }
+
+        .med-rows { display: flex; flex-direction: column; gap: .75rem; }
+        .med-row {
+            background: rgba(255,255,255,.03); border: 1px solid var(--border);
+            border-radius: 12px; padding: 1rem 1rem .85rem;
+            transition: border-color .2s; animation: fadeUp .25s ease both;
+        }
+        .med-row:focus-within { border-color: rgba(129,140,248,.35); }
+        .med-row-top { display: flex; align-items: flex-start; gap: .75rem; }
+        .med-num {
+            width: 26px; height: 26px; flex-shrink: 0; margin-top: 1.65rem;
+            background: var(--indigo-glow); border: 1px solid rgba(129,140,248,.3);
+            border-radius: 7px; display: flex; align-items: center; justify-content: center;
+            font-size: .72rem; font-weight: 700; color: var(--indigo); font-family: 'DM Mono', monospace;
+        }
+        .med-fields-top { display: flex; flex: 1; gap: .75rem; flex-wrap: wrap; align-items: flex-start; }
+
+        /* ── DOSE × DAYS CALCULATOR ── */
+        .dose-days-row {
+            display: flex; gap: .5rem; align-items: flex-end; flex-wrap: wrap;
+            margin-top: .75rem; padding-top: .75rem;
+            border-top: 1px solid rgba(255,255,255,.05);
+            padding-left: calc(26px + .75rem);
+        }
+        .dose-days-row .f { display: flex; flex-direction: column; gap: .25rem; }
+        .dose-days-row .f label {
+            font-size: .65rem; font-weight: 600; text-transform: uppercase;
+            letter-spacing: .7px; color: var(--muted);
+        }
+        .dose-input {
+            background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+            color: var(--white); padding: .48rem .65rem; border-radius: 7px;
+            font-size: .875rem; font-family: 'DM Mono', monospace;
+            transition: border-color .2s; outline: none; width: 80px;
+        }
+        .dose-input:focus { border-color: var(--indigo); box-shadow: 0 0 0 2px rgba(129,140,248,.15); }
+        .dose-input::placeholder { color: rgba(255,255,255,.2); }
+
+        .dose-operator {
+            font-size: 1.1rem; color: var(--muted); padding-bottom: .5rem; font-weight: 600;
+        }
+
+        /* calculated total pill */
+        .qty-result {
+            display: flex; flex-direction: column; gap: .25rem;
+        }
+        .qty-result label {
+            font-size: .65rem; font-weight: 600; text-transform: uppercase;
+            letter-spacing: .7px; color: var(--muted);
+        }
+        .qty-pill {
+            display: inline-flex; align-items: center; gap: .4rem;
+            padding: .45rem .85rem; border-radius: 8px;
+            font-size: .9rem; font-weight: 700; font-family: 'DM Mono', monospace;
+            background: rgba(14,165,176,.1); border: 1px solid rgba(14,165,176,.25);
+            color: var(--teal-light); min-width: 80px; transition: all .2s;
+        }
+        .qty-pill.warn  { background: rgba(239,68,68,.1);  border-color: rgba(239,68,68,.3);  color: #fca5a5; }
+        .qty-pill.empty { background: rgba(255,255,255,.04); border-color: var(--border); color: var(--muted); }
+
+        /* instruction row */
+        .med-row-instructions {
+            display: flex; gap: .75rem; flex-wrap: wrap;
+            margin-top: .75rem; padding-top: .75rem;
+            border-top: 1px solid rgba(255,255,255,.05);
+            padding-left: calc(26px + .75rem);
+        }
+        .f { display: flex; flex-direction: column; gap: .25rem; }
+        .f label { font-size: .65rem; font-weight: 600; text-transform: uppercase; letter-spacing: .7px; color: var(--muted); }
+
+        /* ── AUTOCOMPLETE ── */
+        .ac-wrap { position: relative; flex: 2; min-width: 180px; }
+        .ac-wrap label { font-size: .65rem; font-weight: 600; text-transform: uppercase; letter-spacing: .7px; color: var(--muted); display: block; margin-bottom: .25rem; }
+        .ac-input {
+            background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+            color: var(--white); padding: .5rem .75rem; border-radius: 7px;
+            font-size: .875rem; font-family: 'DM Sans', sans-serif;
+            transition: border-color .2s, box-shadow .2s; outline: none; width: 100%;
+        }
+        .ac-input::placeholder { color: rgba(255,255,255,.22); }
+        .ac-input:focus    { border-color: var(--indigo); box-shadow: 0 0 0 2px rgba(129,140,248,.15); background: rgba(129,140,248,.05); }
+        .ac-input.selected { border-color: rgba(16,185,129,.4); background: rgba(16,185,129,.05); color: #a7f3d0; }
+        .ac-input.error    { border-color: rgba(239,68,68,.5); background: rgba(239,68,68,.05); }
+        .ac-dropdown {
+            position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+            background: #1a2f55; border: 1px solid rgba(129,140,248,.3);
+            border-radius: 10px; overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0,0,0,.5);
+            z-index: 200; max-height: 220px; overflow-y: auto; display: none;
+        }
+        .ac-dropdown.open { display: block; }
+        .ac-item {
+            padding: .6rem .9rem; cursor: pointer;
+            border-bottom: 1px solid rgba(255,255,255,.05);
+            transition: background .12s; display: flex; flex-direction: column; gap: .12rem;
+        }
+        .ac-item:last-child { border-bottom: none; }
+        .ac-item:hover { background: rgba(129,140,248,.18); }
+        .ac-item-name { font-size: .875rem; font-weight: 600; color: var(--white); }
+        .ac-item-meta { display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; }
+        .tag { font-size: .7rem; padding: .1rem .4rem; border-radius: 4px; font-family: 'DM Mono', monospace; }
+        .tag-dosage { color: var(--teal-light); background: rgba(14,165,176,.12); border: 1px solid rgba(14,165,176,.2); }
+        .tag-form   { color: var(--indigo);     background: rgba(129,140,248,.1);  border: 1px solid rgba(129,140,248,.2); }
+        .ac-no-results { padding: .85rem; font-size: .82rem; color: var(--muted); text-align: center; font-style: italic; }
+
+        .med-auto-field { min-width: 80px; }
+        .med-auto-field input {
+            background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06);
+            color: var(--muted); padding: .5rem .65rem; border-radius: 7px;
+            font-size: .8rem; font-family: 'DM Mono', monospace; outline: none;
+            cursor: default; width: 100%;
+        }
+        .med-auto-field input.filled { color: var(--teal-light); background: rgba(14,165,176,.06); border-color: rgba(14,165,176,.2); }
+
+        .rx-select {
+            background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+            color: var(--white); padding: .45rem .65rem; border-radius: 7px;
+            font-size: .82rem; font-family: 'DM Sans', sans-serif;
+            outline: none; cursor: pointer; width: 100%;
+            transition: border-color .2s, box-shadow .2s;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238ba3c9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right .6rem center; padding-right: 1.8rem;
+        }
+        .rx-select:focus { border-color: var(--indigo); box-shadow: 0 0 0 2px rgba(129,140,248,.15); background-color: rgba(129,140,248,.06); }
+        .rx-select option { background: #1a2f55; color: var(--white); }
+        .f-freq   { min-width: 130px; flex: 1; }
+        .f-timing { min-width: 150px; flex: 1.3; }
+        .f-food   { min-width: 120px; flex: 1; }
+
+        .med-remove {
+            width: 28px; height: 28px; flex-shrink: 0; margin-top: 1.65rem;
+            background: rgba(239,68,68,.12); border: 1px solid rgba(239,68,68,.2);
+            border-radius: 7px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; color: #fca5a5; font-size: .85rem; transition: all .2s;
+        }
+        .med-remove:hover { background: rgba(239,68,68,.28); border-color: rgba(239,68,68,.45); }
+
+        .add-med-btn {
+            display: inline-flex; align-items: center; gap: .5rem; margin-top: .75rem;
+            padding: .5rem 1rem; border-radius: 8px; font-size: .82rem; font-weight: 600;
+            background: rgba(129,140,248,.12); border: 1px dashed rgba(129,140,248,.35);
+            color: var(--indigo); cursor: pointer; transition: all .2s; font-family: 'DM Sans', sans-serif;
+            outline: none;
+        }
+        .add-med-btn:hover { background: rgba(129,140,248,.22); border-color: rgba(129,140,248,.6); }
+
+        .btn {
+            display: inline-flex; align-items: center; gap: .4rem;
+            padding: .7rem 1.5rem; border: none; border-radius: 8px;
+            font-size: .9rem; font-weight: 600; font-family: 'DM Sans', sans-serif;
+            cursor: pointer; transition: all .2s ease; white-space: nowrap;
+        }
+        .btn-submit {
+            background: linear-gradient(135deg, var(--teal), #0891a0);
+            color: var(--white); box-shadow: 0 4px 14px rgba(14,165,176,.35);
+        }
+        .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(14,165,176,.5); }
+        .btn-submit:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+        .btn-row { display: flex; justify-content: flex-end; margin-top: 1.5rem; gap: .75rem; align-items: center; }
+
+        .divider { height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin: 2.5rem 0; }
+
+        .badge { display: inline-flex; align-items: center; gap: .3rem; padding: .2rem .6rem; border-radius: 20px; font-size: .72rem; font-weight: 600; }
+        .badge-completed { background: rgba(16,185,129,.15); color: #6ee7b7; border: 1px solid rgba(16,185,129,.3); }
+
+        #toast {
+            position: fixed; bottom: 1.5rem; right: 1.5rem;
+            background: var(--navy-mid); border: 1px solid var(--teal);
+            color: var(--white); padding: .75rem 1.25rem; border-radius: 10px;
+            font-size: .875rem; font-weight: 500; box-shadow: var(--shadow-teal);
+            transform: translateY(80px); opacity: 0;
+            transition: all .3s cubic-bezier(.34,1.56,.64,1); z-index: 999;
+        }
+        #toast.show { transform: translateY(0); opacity: 1; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        @media(max-width: 768px) {
+            .navbar { padding: 0 1.2rem; }
+            .page   { padding: 1.5rem 1rem 3rem; }
+            .diag-row { grid-template-columns: 1fr; }
+            .patient-row { flex-direction: column; }
+            .patient-confirm { margin-top: 0; }
+            .med-fields-top, .med-row-instructions, .dose-days-row { flex-direction: column; }
+            .med-row-instructions, .dose-days-row { padding-left: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="navbar-brand">
+        <div class="logo-icon">🏥</div>
+        <div>
+            <span class="brand-text">HMS</span>
+            <span class="brand-sub">Hospital Management System</span>
+        </div>
+    </div>
+    <div class="navbar-right">
+        <span class="role-badge">Doctor</span>
+        <a href="/logout" class="logout-btn">⏻ Logout</a>
+    </div>
+</nav>
+
+<div class="page">
+
+    <div class="page-header">
+        <h1>Doctor Dashboard</h1>
+        <p>Welcome, Dr. {{ stats.name }} — manage your appointments and patient records below.</p>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card" style="--accent:#0ea5b0;">
+            <div class="sc-icon">📅</div>
+            <div class="sc-label">Today's Appointments</div>
+            <div class="sc-value">{{ stats.today }}</div>
+        </div>
+        <div class="stat-card" style="--accent:#818cf8;">
+            <div class="sc-icon">⏳</div>
+            <div class="sc-label">Pending Appointments</div>
+            <div class="sc-value">{{ stats.pending }}</div>
+        </div>
+        <div class="stat-card" style="--accent:#10b981;">
+            <div class="sc-icon">📝</div>
+            <div class="sc-label">Records Written</div>
+            <div class="sc-value">{{ stats.written }}</div>
+        </div>
+    </div>
+
+    <!-- ── PENDING APPOINTMENTS ── -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-icon">📋</div>
+            <h2>Pending Appointments</h2>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr><th>Patient Name</th><th>Patient ID</th><th>Date</th><th>Time</th><th>Action</th></tr>
+                </thead>
+                <tbody>
+                    {% for a in appointments %}
+                    <tr>
+                        <td>{{ a.PatientName }}</td>
+                        <td class="id-cell">{{ a.PatientID }}</td>
+                        <td>
+                            {{ a.Date }}
+                            {% if a.Date == today %}<span class="today-badge">Today</span>{% endif %}
+                        </td>
+                        <td>{{ a.Time }}</td>
+                        <td>
+                            <button type="button" class="appt-use-btn"
+                                    onclick="selectPatient('{{ a.PatientID }}', '{{ a.PatientName }}')">
+                                ✍️ Write Record
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr class="empty-row"><td colspan="5">No pending appointments.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ── COMBINED RECORD + PRESCRIPTION FORM ── -->
+    <div class="section" id="recordForm">
+        <div class="section-header">
+            <div class="section-icon">📝</div>
+            <h2>New Medical Record &amp; Prescription</h2>
+        </div>
+
+        {% if not appointments %}
+        <div class="no-appts-notice">
+            ⚠️ You have no pending appointments. Records can only be created for patients with an active appointment.
+        </div>
+        {% endif %}
+
+        <div class="form-card">
+            <form action="/add_record_with_prescription" method="POST" id="mainForm">
+
+                <!-- Patient selector -->
+                <div class="patient-row">
+                    <div class="patient-select-wrap">
+                        <label>Select Patient (from your appointments)</label>
+                        <select id="patientSelect" name="PatientID" class="patient-select" required
+                                onchange="onPatientChange(this)">
+                            <option value="">— choose a patient —</option>
+                            {% for a in appointments %}
+                            <option value="{{ a.PatientID }}"
+                                    data-name="{{ a.PatientName }}"
+                                    data-date="{{ a.Date }}"
+                                    data-time="{{ a.Time }}">
+                                {{ a.PatientName }} (ID: {{ a.PatientID }}) — {{ a.Date }} {{ a.Time }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="patient-confirm" id="patientConfirm">
+                        👤 Select a patient from your appointments
+                    </div>
+                </div>
+
+                <!-- Diagnosis + Treatment -->
+                <div class="diag-row">
+                    <div class="form-field">
+                        <label>Diagnosis</label>
+                        <textarea name="Diagnosis" placeholder="e.g. Viral fever with mild dehydration" required></textarea>
+                    </div>
+                    <div class="form-field">
+                        <label>Treatment</label>
+                        <textarea name="Treatment" placeholder="e.g. Rest, fluids, Paracetamol 500mg TDS" required></textarea>
+                    </div>
+                </div>
+
+                <!-- Prescription block -->
+                <div class="rx-block">
+                    <div class="rx-block-header">
+                        <div class="rx-title">
+                            💊 Prescription
+                            <span class="rx-optional">Optional — leave empty to save record only</span>
+                        </div>
+                    </div>
+                    <div class="med-rows" id="medRows"></div>
+                    <button type="button" class="add-med-btn" id="addMedBtn">＋ Add Medicine</button>
+                </div>
+
+                <div class="btn-row">
+                    <span id="saveNote" style="font-size:.8rem;color:var(--muted);"></span>
+                    <button type="submit" class="btn btn-submit" id="submitBtn"
+                            {% if not appointments %}disabled title="No pending appointments"{% endif %}>
+                        💾 Save Record &amp; Prescription
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ── COMPLETED RECORDS ── -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-icon">✅</div>
+            <h2>Completed Records (Recent 20)</h2>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr><th>Record ID</th><th>Patient</th><th>Diagnosis</th><th>Treatment</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                    {% for r in past_records %}
+                    <tr>
+                        <td class="id-cell">{{ r.RecordID }}</td>
+                        <td>{{ r.PatientName }}</td>
+                        <td style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.Diagnosis }}</td>
+                        <td style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.Treatment }}</td>
+                        <td><span class="badge badge-completed">✓ Completed</span></td>
+                    </tr>
+                    {% else %}
+                    <tr class="empty-row"><td colspan="5">No records written yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+const MEDICINES = [
+    {% for m in medicines %}
+    {
+        id:       {{ m.MedicineID }},
+        name:     "{{ m.Name   | e }}",
+        dosage:   "{{ m.Dosage | default('', true) | e }}",
+        form:     "{{ m.Form   | default('', true) | e }}",
+        stock:    {{ m.Stock }},
+        minStock: {{ m.MinStock }}
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+];
+</script>
+
+<script>
+/* ── TOAST ── */
+function showToast(msg, type) {
+    const t = document.getElementById('toast');
+    t.textContent = (type === 'success' ? '✓ ' : '⚠ ') + msg;
+    t.style.borderColor = type === 'success' ? 'var(--teal)' : 'var(--amber)';
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3500);
+}
+const _p = new URLSearchParams(window.location.search);
+if (_p.get('msg')) {
+    const m = decodeURIComponent(_p.get('msg').replace(/\+/g, ' '));
+    showToast(m, /invalid|not found|required|does not/i.test(m) ? 'warn' : 'success');
+}
+
+/* ── PATIENT SELECT ── */
+function onPatientChange(sel) {
+    const box = document.getElementById('patientConfirm');
+    const opt = sel.options[sel.selectedIndex];
+    if (!sel.value) {
+        box.textContent = '👤 Select a patient from your appointments';
+        box.className = 'patient-confirm';
+        return;
+    }
+    box.textContent = `✓ ${opt.dataset.name} — Appt: ${opt.dataset.date} ${opt.dataset.time}`;
+    box.className   = 'patient-confirm valid';
+}
+
+function selectPatient(id, name) {
+    const sel = document.getElementById('patientSelect');
+    sel.value = id;
+    onPatientChange(sel);
+    document.getElementById('recordForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ── MEDICINE ROWS ── */
+let medCount = 0;
+
+function addMedRow() {
+    medCount++;
+    const n   = medCount;
+    const ctr = document.getElementById('medRows');
+    const div = document.createElement('div');
+    div.className        = 'med-row';
+    div.id               = `medRow_${n}`;
+    div.dataset.rowIndex = n;
+
+    div.innerHTML = `
+    <div class="med-row-top">
+        <div class="med-num" id="med_num_${n}">${ctr.querySelectorAll('.med-row').length + 1}</div>
+        <div class="med-fields-top">
+            <!-- Medicine autocomplete -->
+            <div class="ac-wrap">
+                <label>Medicine Name</label>
+                <input id="ac_input_${n}" class="ac-input" type="text"
+                       placeholder="Type to search…" autocomplete="off"
+                       oninput="searchMed(this,${n})"
+                       onblur="setTimeout(()=>closeDrop(${n}),160)">
+                <input type="hidden" name="MedicineID" id="med_id_${n}" value="">
+                <div class="ac-dropdown" id="ac_drop_${n}"></div>
+            </div>
+            <!-- Auto-filled dosage / form -->
+            <div class="f med-auto-field">
+                <label>Dosage</label>
+                <input id="med_dosage_${n}" type="text" readonly placeholder="auto" tabindex="-1">
+            </div>
+            <div class="f med-auto-field">
+                <label>Form</label>
+                <input id="med_form_${n}" type="text" readonly placeholder="auto" tabindex="-1">
+            </div>
+        </div>
+        <div class="med-remove" title="Remove" onclick="removeMed(${n})">✕</div>
+    </div>
+
+    <!-- ── DOSE × DAYS CALCULATOR ── -->
+    <div class="dose-days-row">
+        <div class="f">
+            <label>Dose / Day</label>
+            <input class="dose-input" type="number" min="1" max="20" placeholder="e.g. 3"
+                   id="dose_${n}" oninput="calcQty(${n})">
+        </div>
+        <div class="dose-operator">×</div>
+        <div class="f">
+            <label>Days</label>
+            <input class="dose-input" type="number" min="1" max="365" placeholder="e.g. 7"
+                   id="days_${n}" oninput="calcQty(${n})">
+        </div>
+        <div class="dose-operator">=</div>
+        <div class="qty-result">
+            <label>Total Qty</label>
+            <div class="qty-pill empty" id="qty_pill_${n}">—</div>
+        </div>
+        <!-- hidden input that actually gets submitted -->
+        <input type="hidden" name="Quantity" id="med_qty_${n}" value="">
+    </div>
+
+    <!-- Frequency / timing / food instructions -->
+    <div class="med-row-instructions">
+        <div class="f f-freq">
+            <label>Frequency</label>
+            <select name="Frequency" class="rx-select">
+                <option value="">— select —</option>
+                <option value="1 time/day">1 time/day</option>
+                <option value="2 times/day">2 times/day</option>
+                <option value="3 times/day">3 times/day</option>
+                <option value="4 times/day">4 times/day</option>
+            </select>
+        </div>
+        <div class="f f-timing">
+            <label>Timing Pattern</label>
+            <select name="TimingPattern" class="rx-select">
+                <option value="">— select —</option>
+                <option value="Every morning">Every morning</option>
+                <option value="Every night">Every night</option>
+                <option value="Every 12 hours">Every 12 hours</option>
+                <option value="Every 8 hours">Every 8 hours</option>
+                <option value="Every 6 hours">Every 6 hours</option>
+                <option value="As needed (SOS)">As needed (SOS)</option>
+            </select>
+        </div>
+        <div class="f f-food">
+            <label>Food Instruction</label>
+            <select name="FoodInstruction" class="rx-select">
+                <option value="">— select —</option>
+                <option value="Before food">Before food</option>
+                <option value="After food">After food</option>
+                <option value="With food">With food</option>
+            </select>
+        </div>
+    </div>`;
+
+    ctr.appendChild(div);
+    document.getElementById(`ac_input_${n}`).focus();
+    updateNote();
+}
+
+/* ── DOSE × DAYS CALCULATOR ── */
+function calcQty(n) {
+    const dose    = parseInt(document.getElementById(`dose_${n}`).value) || 0;
+    const days    = parseInt(document.getElementById(`days_${n}`).value) || 0;
+    const total   = dose * days;
+    const pill    = document.getElementById(`qty_pill_${n}`);
+    const hidden  = document.getElementById(`med_qty_${n}`);
+
+    if (total > 0) {
+        pill.textContent = total;
+        hidden.value     = total;
+        pill.className   = 'qty-pill';
+    } else {
+        pill.textContent = '—';
+        pill.className   = 'qty-pill empty';
+        hidden.value     = '';
+    }
+    updateNote();
+}
+
+function removeMed(n) {
+    const r = document.getElementById(`medRow_${n}`);
+    if (!r) return;
+    Object.assign(r.style, { opacity: '0', transform: 'translateX(12px)', transition: 'all .2s' });
+    setTimeout(() => { r.remove(); renumber(); updateNote(); }, 200);
+}
+
+function renumber() {
+    document.querySelectorAll('.med-row').forEach((r, i) => {
+        const el = r.querySelector('.med-num');
+        if (el) el.textContent = i + 1;
+    });
+}
+
+function updateNote() {
+    const rows = document.querySelectorAll('.med-row');
+    let filled = 0;
+    rows.forEach(r => {
+        const n  = parseInt(r.dataset.rowIndex);
+        const id = document.getElementById(`med_id_${n}`)?.value;
+        const q  = document.getElementById(`med_qty_${n}`)?.value;
+        if (id && q) filled++;
+    });
+    const note = document.getElementById('saveNote');
+    if (rows.length === 0) {
+        note.textContent = 'No medicines — record only will be saved';
+    } else {
+        note.textContent = `${filled} of ${rows.length} medicine${rows.length > 1 ? 's' : ''} complete`;
+        note.style.color = filled < rows.length ? 'var(--amber)' : 'var(--muted)';
+    }
+}
+
+document.getElementById('addMedBtn').addEventListener('click', addMedRow);
+addMedRow(); // start with one row
+
+function searchMed(inputEl, n) {
+    const q    = inputEl.value.trim().toLowerCase();
+    const drop = document.getElementById(`ac_drop_${n}`);
+    document.getElementById(`med_id_${n}`).value = '';
+    inputEl.classList.remove('selected', 'error');
+    // reset calc when medicine changes
+    document.getElementById(`qty_pill_${n}`).textContent = '—';
+    document.getElementById(`qty_pill_${n}`).className   = 'qty-pill empty';
+    document.getElementById(`med_qty_${n}`).value        = '';
+    if (!q) { closeDrop(n); return; }
+
+    const usedIds = getUsedIds(n);
+    const hits    = MEDICINES.filter(m => m.name.toLowerCase().includes(q));
+
+    drop.innerHTML = '';
+    if (!hits.length) {
+        drop.innerHTML = '<div class="ac-no-results">No medicines found</div>';
+    } else {
+        hits.forEach(m => {
+            const item = document.createElement('div');
+            item.className = 'ac-item';
+            if (usedIds.includes(m.id)) item.style.opacity = '.45';
+            item.innerHTML = `
+                <div class="ac-item-name">${highlight(m.name, q)}</div>
+                <div class="ac-item-meta">
+                    ${m.dosage ? `<span class="tag tag-dosage">${m.dosage}</span>` : ''}
+                    ${m.form   ? `<span class="tag tag-form">${m.form}</span>`     : ''}
+                    ${usedIds.includes(m.id) ? '<span style="font-size:.68rem;color:#fcd34d">already added</span>' : ''}
+                </div>`;
+            item.addEventListener('mousedown', e => { e.preventDefault(); pickMed(n, m.id); });
+            drop.appendChild(item);
+        });
+    }
+    drop.classList.add('open');
+}
+
+function pickMed(n, medicineId) {
+    const m = MEDICINES.find(x => x.id === medicineId);
+    if (!m) return;
+    if (getUsedIds(n).includes(m.id)) { showToast(`${m.name} is already added`, 'warn'); return; }
+
+    const nameEl   = document.getElementById(`ac_input_${n}`);
+    const dosageEl = document.getElementById(`med_dosage_${n}`);
+    const formEl   = document.getElementById(`med_form_${n}`);
+
+    nameEl.value   = m.name;
+    nameEl.classList.add('selected'); nameEl.classList.remove('error');
+    document.getElementById(`med_id_${n}`).value = m.id;
+    dosageEl.value = m.dosage || '—'; dosageEl.classList.add('filled');
+    formEl.value   = m.form   || '—'; formEl.classList.add('filled');
+
+    closeDrop(n);
+    document.getElementById(`dose_${n}`).focus();
+    calcQty(n);
+    updateNote();
+}
+
+function closeDrop(n) {
+    const d = document.getElementById(`ac_drop_${n}`);
+    if (d) { d.classList.remove('open'); d.innerHTML = ''; }
+}
+
+function highlight(name, q) {
+    const i = name.toLowerCase().indexOf(q);
+    if (i < 0) return name;
+    return name.slice(0,i) + `<strong style="color:var(--teal-light)">${name.slice(i, i+q.length)}</strong>` + name.slice(i+q.length);
+}
+
+function getUsedIds(excludeN) {
+    const ids = [];
+    document.querySelectorAll('.med-row').forEach(r => {
+        const ri = parseInt(r.dataset.rowIndex);
+        if (ri === excludeN) return;
+        const h = document.getElementById(`med_id_${ri}`);
+        if (h && h.value) ids.push(parseInt(h.value));
+    });
+    return ids;
+}
+
+/* ── FORM VALIDATION ── */
+document.getElementById('mainForm').addEventListener('submit', function(e) {
+    const sel = document.getElementById('patientSelect');
+    if (!sel.value) {
+        e.preventDefault();
+        showToast('Please select a patient from your appointments', 'warn');
+        sel.focus(); return;
+    }
+
+    const rows = document.querySelectorAll('.med-row');
+    for (let i = 0; i < rows.length; i++) {
+        const n      = parseInt(rows[i].dataset.rowIndex);
+        const nameEl = document.getElementById(`ac_input_${n}`);
+        const idEl   = document.getElementById(`med_id_${n}`);
+        const doseEl = document.getElementById(`dose_${n}`);
+        const daysEl = document.getElementById(`days_${n}`);
+        const qtyEl  = document.getElementById(`med_qty_${n}`);
+        const typed  = nameEl && nameEl.value.trim() !== '';
+        const hasId  = idEl   && idEl.value.trim()   !== '';
+
+        if (typed && !hasId) {
+            e.preventDefault();
+            nameEl.classList.add('error'); nameEl.focus();
+            showToast(`Row ${i+1}: Select a medicine from the dropdown`, 'warn');
+            return;
+        }
+        if (hasId) {
+            if (!doseEl.value || parseInt(doseEl.value) < 1) {
+                e.preventDefault();
+                doseEl.focus();
+                showToast(`Row ${i+1}: Enter dose per day for ${nameEl.value}`, 'warn');
+                return;
+            }
+            if (!daysEl.value || parseInt(daysEl.value) < 1) {
+                e.preventDefault();
+                daysEl.focus();
+                showToast(`Row ${i+1}: Enter number of days for ${nameEl.value}`, 'warn');
+                return;
+            }
+            if (!qtyEl.value || parseInt(qtyEl.value) < 1) {
+                e.preventDefault();
+                showToast(`Row ${i+1}: Quantity could not be calculated`, 'warn');
+                return;
+            }
+        }
+    }
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '⏳ Saving…';
+});
+
+/* ── COUNT-UP ── */
+document.querySelectorAll('.sc-value').forEach(el => {
+    const target = parseInt(el.textContent, 10);
+    if (isNaN(target) || target === 0) return;
+    let current = 0;
+    const step = Math.max(1, Math.ceil(target / 20));
+    const timer = setInterval(() => {
+        current = Math.min(current + step, target);
+        el.textContent = current;
+        if (current >= target) clearInterval(timer);
+    }, 40);
+});
+</script>
+</body>
+</html>

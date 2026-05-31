@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HMS — Hospital Management System</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --navy:        #0f1f3d;
+            --navy-mid:    #162847;
+            --navy-light:  #1e3560;
+            --teal:        #0ea5b0;
+            --teal-light:  #17c4d0;
+            --teal-glow:   rgba(14,165,176,.18);
+            --amber:       #f59e0b;
+            --red:         #ef4444;
+            --green:       #10b981;
+            --white:       #ffffff;
+            --muted:       #8ba3c9;
+            --border:      rgba(255,255,255,.08);
+            --card-bg:     rgba(255,255,255,.04);
+            --radius-lg:   18px;
+            --shadow-teal: 0 0 32px rgba(14,165,176,.25);
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--navy);
+            color: var(--white);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── ANIMATED BACKGROUND ── */
+        .bg-layer {
+            position: fixed; inset: 0; z-index: 0; pointer-events: none;
+            background:
+                radial-gradient(ellipse 90% 60% at 15% -5%,  rgba(14,165,176,.14) 0%, transparent 55%),
+                radial-gradient(ellipse 70% 50% at 85% 105%, rgba(129,140,248,.10) 0%, transparent 55%),
+                radial-gradient(ellipse 50% 40% at 50%  50%, rgba(245,158,11,.04) 0%, transparent 60%);
+        }
+
+        /* floating orbs */
+        .orb {
+            position: fixed; border-radius: 50%; filter: blur(60px); pointer-events: none; z-index: 0;
+            animation: drift 12s ease-in-out infinite alternate;
+        }
+        .orb1 { width: 320px; height: 320px; background: rgba(14,165,176,.08); top: -80px; left: -60px; animation-delay: 0s; }
+        .orb2 { width: 260px; height: 260px; background: rgba(129,140,248,.07); bottom: -60px; right: -40px; animation-delay: -4s; }
+        .orb3 { width: 180px; height: 180px; background: rgba(245,158,11,.05); top: 40%; left: 60%; animation-delay: -8s; }
+
+        @keyframes drift {
+            from { transform: translate(0, 0) scale(1); }
+            to   { transform: translate(30px, 20px) scale(1.08); }
+        }
+
+        /* ── NAVBAR ── */
+        .navbar {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 2.5rem; height: 64px;
+            background: rgba(15,31,61,.85);
+            backdrop-filter: blur(18px);
+            border-bottom: 1px solid var(--border);
+        }
+        .navbar-brand { display: flex; align-items: center; gap: .75rem; }
+        .logo-icon {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--teal), var(--teal-light));
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; box-shadow: 0 0 16px rgba(14,165,176,.4);
+        }
+        .brand-text {
+            font-size: 1.15rem; font-weight: 700; letter-spacing: .5px;
+            background: linear-gradient(90deg, var(--white), var(--teal-light));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .brand-sub {
+            font-size: .68rem; color: var(--muted);
+            display: block; margin-top: -2px; letter-spacing: .8px;
+        }
+        .nav-links { display: flex; align-items: center; gap: .25rem; }
+        .nav-link {
+            font-size: .875rem; font-weight: 500; color: var(--muted);
+            padding: .45rem .9rem; border-radius: 7px;
+            text-decoration: none; transition: all .2s;
+        }
+        .nav-link:hover { color: var(--white); background: rgba(255,255,255,.07); }
+        .nav-cta {
+            font-size: .875rem; font-weight: 600; color: var(--white);
+            background: linear-gradient(135deg, var(--teal), #0891a0);
+            padding: .48rem 1.1rem; border-radius: 8px;
+            text-decoration: none; transition: all .2s;
+            box-shadow: 0 4px 14px rgba(14,165,176,.3);
+        }
+        .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(14,165,176,.5); }
+
+        /* ── HERO SECTION ── */
+        .hero {
+            position: relative; z-index: 1;
+            min-height: 100vh;
+            display: grid; grid-template-columns: 1fr 1fr;
+            align-items: center;
+            gap: 4rem; padding: 7rem 6rem 4rem;
+            max-width: 1400px; margin: 0 auto;
+        }
+
+        /* LEFT — content */
+        .hero-left { animation: fadeLeft .8s ease both; }
+
+        .hero-eyebrow {
+            display: inline-flex; align-items: center; gap: .5rem;
+            font-size: .75rem; font-weight: 600; letter-spacing: 1.2px;
+            text-transform: uppercase; color: var(--teal-light);
+            background: var(--teal-glow); border: 1px solid rgba(14,165,176,.3);
+            padding: .35rem .9rem; border-radius: 20px; margin-bottom: 1.5rem;
+        }
+        .hero-eyebrow .dot {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: var(--teal-light);
+            animation: pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%,100% { opacity: 1; transform: scale(1); }
+            50%      { opacity: .4; transform: scale(.7); }
+        }
+
+        .hero-title {
+            font-size: clamp(2.2rem, 4vw, 3.2rem);
+            font-weight: 700; line-height: 1.15;
+            margin-bottom: 1.25rem; letter-spacing: -.5px;
+        }
+        .hero-title .gradient-word {
+            background: linear-gradient(135deg, var(--teal-light) 0%, #67e8f9 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        .hero-desc {
+            font-size: 1.05rem; line-height: 1.75; color: var(--muted);
+            margin-bottom: 2.25rem; max-width: 480px;
+        }
+
+        .hero-actions { display: flex; align-items: center; gap: 1rem; margin-bottom: 3rem; }
+        .btn-hero-primary {
+            display: inline-flex; align-items: center; gap: .5rem;
+            background: linear-gradient(135deg, var(--teal), #0891a0);
+            color: var(--white); font-weight: 700; font-size: 1rem;
+            padding: .85rem 2rem; border-radius: 10px; text-decoration: none;
+            box-shadow: 0 6px 24px rgba(14,165,176,.4); transition: all .25s;
+            font-family: 'DM Sans', sans-serif;
+        }
+        .btn-hero-primary:hover { transform: translateY(-3px); box-shadow: 0 10px 32px rgba(14,165,176,.55); }
+        .btn-hero-secondary {
+            display: inline-flex; align-items: center; gap: .5rem;
+            color: var(--muted); font-weight: 600; font-size: .95rem;
+            padding: .85rem 1.5rem; border-radius: 10px; text-decoration: none;
+            border: 1px solid var(--border); transition: all .25s;
+        }
+        .btn-hero-secondary:hover { color: var(--white); border-color: rgba(255,255,255,.2); background: rgba(255,255,255,.05); }
+
+        /* Feature pills */
+        .hero-features { display: flex; flex-wrap: wrap; gap: .6rem; }
+        .feature-pill {
+            display: inline-flex; align-items: center; gap: .45rem;
+            font-size: .8rem; font-weight: 500; color: rgba(255,255,255,.7);
+            background: rgba(255,255,255,.05); border: 1px solid var(--border);
+            padding: .35rem .85rem; border-radius: 20px;
+        }
+        .feature-pill .pill-icon { font-size: .85rem; }
+
+        /* RIGHT — login card */
+        .hero-right { animation: fadeRight .8s ease both; display: flex; justify-content: center; }
+
+        .login-card {
+            width: 100%; max-width: 420px;
+            background: rgba(22,40,71,.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,.1);
+            border-radius: 24px;
+            padding: 2.5rem;
+            box-shadow: 0 24px 64px rgba(0,0,0,.5), var(--shadow-teal);
+            position: relative; overflow: hidden;
+        }
+        .login-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, var(--teal), var(--teal-light), #67e8f9);
+        }
+
+        .card-header { text-align: center; margin-bottom: 2rem; }
+        .card-header .card-logo {
+            width: 56px; height: 56px; margin: 0 auto 1rem;
+            background: linear-gradient(135deg, var(--teal), var(--teal-light));
+            border-radius: 16px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.6rem; box-shadow: 0 8px 24px rgba(14,165,176,.4);
+        }
+        .card-header h2 { font-size: 1.4rem; font-weight: 700; margin-bottom: .3rem; }
+        .card-header p { font-size: .875rem; color: var(--muted); }
+
+        .info-banner {
+            background: rgba(14,165,176,.08);
+            border: 1px solid rgba(14,165,176,.2);
+            border-radius: 10px; padding: .75rem 1rem;
+            font-size: .8rem; color: rgba(255,255,255,.7);
+            margin-bottom: 1.5rem; line-height: 1.5;
+        }
+        .info-banner strong { color: var(--teal-light); }
+
+        .form-group { margin-bottom: 1.2rem; }
+        .form-group label {
+            display: block; margin-bottom: .45rem;
+            font-size: .75rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: .7px; color: var(--muted);
+        }
+        .form-group input {
+            width: 100%; padding: .75rem 1rem;
+            background: rgba(255,255,255,.06);
+            border: 1px solid rgba(255,255,255,.12);
+            color: var(--white); border-radius: 10px;
+            font-size: .925rem; font-family: 'DM Sans', sans-serif;
+            transition: border-color .2s, box-shadow .2s; outline: none;
+        }
+        .form-group input::placeholder { color: rgba(255,255,255,.22); }
+        .form-group input:focus {
+            border-color: var(--teal);
+            box-shadow: 0 0 0 3px rgba(14,165,176,.15);
+            background: rgba(14,165,176,.06);
+        }
+
+        .form-options {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 1.5rem; font-size: .82rem;
+        }
+        .remember-me { display: flex; align-items: center; gap: .5rem; color: var(--muted); cursor: pointer; }
+        .remember-me input[type="checkbox"] {
+            width: 15px; height: 15px; accent-color: var(--teal); cursor: pointer;
+        }
+        .forgot-link { color: var(--teal-light); font-weight: 500; text-decoration: none; transition: color .2s; }
+        .forgot-link:hover { color: var(--white); }
+
+        .login-btn {
+            width: 100%; padding: .85rem;
+            background: linear-gradient(135deg, var(--teal), #0891a0);
+            color: var(--white); border: none; border-radius: 10px;
+            font-size: 1rem; font-weight: 700; font-family: 'DM Sans', sans-serif;
+            cursor: pointer; transition: all .25s;
+            box-shadow: 0 6px 20px rgba(14,165,176,.35);
+            display: flex; align-items: center; justify-content: center; gap: .5rem;
+        }
+        .login-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(14,165,176,.55); }
+        .login-btn:active { transform: translateY(0); }
+
+        .card-divider {
+            display: flex; align-items: center; gap: 1rem;
+            margin: 1.5rem 0; color: var(--muted); font-size: .8rem;
+        }
+        .card-divider::before, .card-divider::after {
+            content: ''; flex: 1; height: 1px; background: var(--border);
+        }
+
+        .roles-row {
+            display: flex; gap: .5rem; justify-content: center;
+        }
+        .role-chip {
+            display: flex; flex-direction: column; align-items: center; gap: .3rem;
+            flex: 1; padding: .65rem .5rem;
+            background: rgba(255,255,255,.04); border: 1px solid var(--border);
+            border-radius: 10px; cursor: pointer; transition: all .2s;
+        }
+        .role-chip:hover { background: var(--teal-glow); border-color: rgba(14,165,176,.3); }
+        .role-chip .chip-icon { font-size: 1.3rem; }
+        .role-chip .chip-label { font-size: .68rem; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; color: var(--muted); }
+
+        /* ── STATS BAR ── */
+        .stats-bar {
+            position: relative; z-index: 1;
+            background: rgba(14,165,176,.06);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            padding: 2rem 6rem;
+        }
+        .stats-bar-inner {
+            max-width: 1400px; margin: 0 auto;
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 1rem; text-align: center;
+        }
+        .stat-item { padding: .5rem; }
+        .stat-item .stat-num {
+            font-size: 2rem; font-weight: 700;
+            font-family: 'DM Mono', monospace;
+            background: linear-gradient(135deg, var(--teal-light), #67e8f9);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .stat-item .stat-desc { font-size: .8rem; color: var(--muted); margin-top: .25rem; letter-spacing: .3px; }
+
+        /* ── FEATURES SECTION ── */
+        .features {
+            position: relative; z-index: 1;
+            padding: 5rem 6rem;
+            max-width: 1400px; margin: 0 auto;
+        }
+        .features-title { text-align: center; margin-bottom: 3rem; }
+        .features-title h2 {
+            font-size: 1.8rem; font-weight: 700;
+            background: linear-gradient(90deg, var(--white), var(--teal-light));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: .5rem;
+        }
+        .features-title p { color: var(--muted); font-size: .95rem; }
+
+        .features-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem;
+        }
+        .feature-card {
+            background: var(--card-bg); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); padding: 1.75rem;
+            transition: all .25s; cursor: default;
+            animation: fadeUp .6s ease both;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            background: rgba(14,165,176,.07);
+            border-color: rgba(14,165,176,.25);
+            box-shadow: var(--shadow-teal);
+        }
+        .feature-card .fc-icon {
+            width: 44px; height: 44px;
+            background: var(--teal-glow); border: 1px solid rgba(14,165,176,.25);
+            border-radius: 12px; display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; margin-bottom: 1rem;
+        }
+        .feature-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: .5rem; }
+        .feature-card p { font-size: .85rem; color: var(--muted); line-height: 1.65; }
+
+        /* ── ROLES SECTION ── */
+        .roles-section {
+            position: relative; z-index: 1;
+            padding: 0 6rem 5rem;
+            max-width: 1400px; margin: 0 auto;
+        }
+        .roles-section .section-title { text-align: center; margin-bottom: 2.5rem; }
+        .roles-section .section-title h2 {
+            font-size: 1.6rem; font-weight: 700;
+            background: linear-gradient(90deg, var(--white), var(--teal-light));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: .4rem;
+        }
+        .roles-section .section-title p { color: var(--muted); font-size: .9rem; }
+
+        .roles-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; }
+        .role-card {
+            background: var(--card-bg); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); padding: 2rem 1.75rem;
+            text-align: center; transition: all .25s;
+        }
+        .role-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--role-color, var(--teal));
+            box-shadow: 0 0 24px var(--role-glow, var(--teal-glow));
+        }
+        .role-card .rc-icon {
+            font-size: 2.5rem; margin-bottom: 1rem; display: block;
+        }
+        .role-card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: .75rem; color: var(--role-color, var(--teal-light)); }
+        .role-card ul { list-style: none; text-align: left; display: flex; flex-direction: column; gap: .45rem; }
+        .role-card ul li {
+            font-size: .82rem; color: var(--muted);
+            padding-left: 1.1rem; position: relative;
+        }
+        .role-card ul li::before {
+            content: '→'; position: absolute; left: 0;
+            color: var(--role-color, var(--teal)); font-size: .75rem;
+        }
+
+        /* ── FOOTER ── */
+        .footer {
+            position: relative; z-index: 1;
+            border-top: 1px solid var(--border);
+            padding: 2rem 6rem;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .footer-brand { font-size: .875rem; color: var(--muted); }
+        .footer-brand strong { color: var(--teal-light); }
+        .footer-note { font-size: .78rem; color: rgba(255,255,255,.25); }
+
+        /* ── ANIMATIONS ── */
+        @keyframes fadeLeft {
+            from { opacity: 0; transform: translateX(-30px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes fadeRight {
+            from { opacity: 0; transform: translateX(30px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .features-grid .feature-card:nth-child(1) { animation-delay: .05s; }
+        .features-grid .feature-card:nth-child(2) { animation-delay: .12s; }
+        .features-grid .feature-card:nth-child(3) { animation-delay: .19s; }
+        .features-grid .feature-card:nth-child(4) { animation-delay: .26s; }
+        .features-grid .feature-card:nth-child(5) { animation-delay: .33s; }
+        .features-grid .feature-card:nth-child(6) { animation-delay: .40s; }
+
+        /* ── RESPONSIVE ── */
+        @media(max-width: 1024px) {
+            .hero { grid-template-columns: 1fr; padding: 7rem 2rem 3rem; gap: 2.5rem; }
+            .hero-right { justify-content: stretch; }
+            .login-card { max-width: 100%; }
+            .stats-bar { padding: 2rem; }
+            .stats-bar-inner { grid-template-columns: repeat(2,1fr); }
+            .features, .roles-section { padding: 3rem 2rem; }
+            .features-grid, .roles-grid { grid-template-columns: 1fr 1fr; }
+            .footer { padding: 1.5rem 2rem; flex-direction: column; gap: .5rem; text-align: center; }
+        }
+        @media(max-width: 640px) {
+            .navbar { padding: 0 1.2rem; }
+            .nav-links { display: none; }
+            .hero { padding: 6rem 1.2rem 2rem; }
+            .hero-title { font-size: 2rem; }
+            .hero-actions { flex-direction: column; align-items: stretch; text-align: center; }
+            .features-grid, .roles-grid { grid-template-columns: 1fr; }
+            .stats-bar-inner { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Background -->
+<div class="bg-layer"></div>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="orb orb3"></div>
+
+<!-- ── NAVBAR ── -->
+<nav class="navbar">
+    <div class="navbar-brand">
+        <div class="logo-icon">🏥</div>
+        <div>
+            <span class="brand-text">HMS</span>
+            <span class="brand-sub">Hospital Management System</span>
+        </div>
+    </div>
+    <div class="nav-links">
+        <a href="#features" class="nav-link">Features</a>
+        <a href="#roles" class="nav-link">Roles</a>
+        <a href="#login-card" class="nav-cta">Login →</a>
+    </div>
+</nav>
+
+<!-- ── HERO ── -->
+<section class="hero">
+
+    <!-- LEFT -->
+    <div class="hero-left">
+        <div class="hero-eyebrow">
+            <span class="dot"></span>
+            Secure · Efficient · Modern
+        </div>
+        <h1 class="hero-title">
+            Smarter Hospital<br>
+            <span class="gradient-word">Management</span><br>
+            Starts Here
+        </h1>
+        <p class="hero-desc">
+            A unified platform for admins, doctors, and patients — managing appointments,
+            medical records, prescriptions, and billing all in one place.
+        </p>
+        <div class="hero-actions">
+            <a href="#login-card" class="btn-hero-primary">🔓 Login to HMS</a>
+            <a href="#features" class="btn-hero-secondary">Explore Features ↓</a>
+        </div>
+        <div class="hero-features">
+            <span class="feature-pill"><span class="pill-icon">🔐</span> Role-Based Access</span>
+            <span class="feature-pill"><span class="pill-icon">📅</span> Appointment Booking</span>
+            <span class="feature-pill"><span class="pill-icon">💊</span> Prescriptions</span>
+            <span class="feature-pill"><span class="pill-icon">💳</span> Smart Billing</span>
+            <span class="feature-pill"><span class="pill-icon">📋</span> Medical Records</span>
+        </div>
+    </div>
+
+    <!-- RIGHT — Login Card -->
+    <div class="hero-right" id="login-card">
+        <div class="login-card">
+            <div class="card-header">
+                <div class="card-logo">🏥</div>
+                <h2>Welcome Back</h2>
+                <p>Sign in to your HMS account</p>
+            </div>
+
+            <div class="info-banner">
+                <strong>Demo:</strong> Use your assigned username and password to login. Contact admin if you need access.
+            </div>
+
+            {% if error %}
+            <div class="form-error" style="color:#ef4444; margin-bottom:1rem; text-align:center;">
+                {{ error }}
+            </div>
+            {% endif %}
+            <form method="POST" id="loginForm">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" placeholder="Enter your username" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" placeholder="••••••••" required autocomplete="current-password">
+                </div>
+                <div class="form-options">
+                    <label class="remember-me">
+                        <input type="checkbox" name="remember" id="remember">
+                        Remember me
+                    </label>
+                    <a href="#" class="forgot-link">Forgot Password?</a>
+                </div>
+                <button type="submit" class="login-btn" id="loginBtn">
+                    <span id="btnText">🔓 Login Now</span>
+                </button>
+            </form>
+
+            <div class="card-divider">Login as</div>
+
+            <div class="roles-row">
+                <div class="role-chip" onclick="fillRole('admin')">
+                    <span class="chip-icon">🛡️</span>
+                    <span class="chip-label">Admin</span>
+                </div>
+                <div class="role-chip" onclick="fillRole('doctor')">
+                    <span class="chip-icon">🩺</span>
+                    <span class="chip-label">Doctor</span>
+                </div>
+                <div class="role-chip" onclick="fillRole('patient')">
+                    <span class="chip-icon">🧑</span>
+                    <span class="chip-label">Patient</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</section>
+
+
+
+<!-- ── FEATURES ── -->
+<section class="features" id="features">
+    <div class="features-title">
+        <h2>Everything Your Hospital Needs</h2>
+        <p>A complete management system built with Flask + MySQL</p>
+    </div>
+    <div class="features-grid">
+        <div class="feature-card">
+            <div class="fc-icon">🔐</div>
+            <h3>Secure Authentication</h3>
+            <p>Role-based login system ensures each user only sees what they're allowed to — Admin, Doctor, or Patient.</p>
+        </div>
+        <div class="feature-card">
+            <div class="fc-icon">📅</div>
+            <h3>Appointment Scheduling</h3>
+            <p>Book appointments with automatic double-booking prevention so doctors are never overloaded.</p>
+        </div>
+        <div class="feature-card">
+            <div class="fc-icon">📋</div>
+            <h3>Medical Records</h3>
+            <p>Doctors can add diagnosis and treatment notes that are instantly visible to the patient on their dashboard.</p>
+        </div>
+        <div class="feature-card">
+            <div class="fc-icon">💊</div>
+            <h3>Prescriptions</h3>
+            <p>Create multi-medicine prescriptions linked to medical records, with automatic stock deduction.</p>
+        </div>
+        <div class="feature-card">
+            <div class="fc-icon">💰</div>
+            <h3>Billing & Payments</h3>
+            <p>Generate bills and track payment status in real time. Bills auto-update to "Paid" when fully settled.</p>
+        </div>
+        <div class="feature-card">
+            <div class="fc-icon">🏪</div>
+            <h3>Medicine Inventory</h3>
+            <p>Track medicine stock levels with low-stock alerts so the pharmacy is always stocked appropriately.</p>
+        </div>
+    </div>
+</section>
+
+<!-- ── ROLES ── -->
+<section class="roles-section" id="roles">
+    <div class="section-title">
+        <h2>Three Roles, One System</h2>
+        <p>Each user type gets their own focused dashboard</p>
+    </div>
+    <div class="roles-grid">
+        <div class="role-card" style="--role-color:#17c4d0; --role-glow:rgba(14,165,176,.18);">
+            <span class="rc-icon">🛡️</span>
+            <h3>Admin</h3>
+            <ul>
+                <li>Add patients & doctors</li>
+                <li>Schedule appointments</li>
+                <li>Manage medicines</li>
+                <li>Generate & track bills</li>
+                <li>View system statistics</li>
+            </ul>
+        </div>
+        <div class="role-card" style="--role-color:#818cf8; --role-glow:rgba(129,140,248,.15);">
+            <span class="rc-icon">🩺</span>
+            <h3>Doctor</h3>
+            <ul>
+                <li>View daily appointments</li>
+                <li>Add medical records</li>
+                <li>Write prescriptions</li>
+                <li>Track patient history</li>
+            </ul>
+        </div>
+        <div class="role-card" style="--role-color:#f59e0b; --role-glow:rgba(245,158,11,.12);">
+            <span class="rc-icon">🧑</span>
+            <h3>Patient</h3>
+            <ul>
+                <li>View medical records</li>
+                <li>Check prescriptions</li>
+                <li>View bills & status</li>
+                <li>Make payments</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer class="footer">
+    <div class="footer-brand">
+        <strong>HMS</strong> — Hospital Management System &nbsp;·&nbsp; Built with Flask + MySQL
+    </div>
+    <div class="footer-note">Role-based access · Secure sessions · Real-time updates</div>
+</footer>
+
+<script>
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+        a.addEventListener('click', e => {
+            const target = document.querySelector(a.getAttribute('href'));
+            if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+        });
+    });
+
+    // Count-up for stats bar
+    const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+            if (!entry.isIntersecting) return;
+            entry.target.querySelectorAll('[data-target]').forEach(el => {
+                const target = parseInt(el.dataset.target);
+                let current = 0;
+                const step = Math.max(1, Math.ceil(target / 40));
+                const timer = setInterval(() => {
+                    current = Math.min(current + step, target);
+                    el.textContent = current + (el.dataset.suffix || '');
+                    if (current >= target) clearInterval(timer);
+                }, 28);
+            });
+            observer.unobserve(entry.target);
+        });
+    }, { threshold: .3 });
+    document.querySelectorAll('.stats-bar').forEach(el => observer.observe(el));
+
+    // Role quick-fill (fills username field with role hint)
+    function fillRole(role) {
+        const hints = { admin: 'admin', doctor: 'doctor', patient: 'patient' };
+        document.getElementById('username').value = hints[role];
+        document.getElementById('password').focus();
+        document.getElementById('loginBtn').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // Login button loading state
+    document.getElementById('loginForm').addEventListener('submit', function() {
+        const btn = document.getElementById('loginBtn');
+        const txt = document.getElementById('btnText');
+        btn.disabled = true;
+        btn.style.opacity = '.7';
+        txt.textContent = '⏳ Logging in…';
+    });
+</script>
+</body>
+</html>

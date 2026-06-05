@@ -50,31 +50,6 @@ A web-based Hospital Management System developed using Python, HTML, CSS, JavaSc
 
 ---
 
-## 📂 Project Structure
-
-```text
-Hospital-Management-System/
-│
-├── static/
-│   ├── css/
-│   ├── js/
-│   └── images/
-│
-├── templates/
-│   ├── index.html
-│   ├── login.html
-│   ├── dashboard.html
-│   └── ...
-│
-├── database/
-│   └── hospital.sql
-│
-├── app.py
-├── requirements.txt
-└── README.md
-```
-
----
 
 ## ⚙️ Installation
 
